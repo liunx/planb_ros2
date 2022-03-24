@@ -22,6 +22,7 @@ find_package(class_loader REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 
 # Package includes not needed for CMake >= 2.8.11
 include_directories(
@@ -35,15 +36,16 @@ set(node_plugins "")
 #=============
 # Planb policy node
 #=============
-
 add_library(
   policy_node SHARED
   src/policy_node.cpp
 )
+
 target_compile_definitions(
   policy_node
   PRIVATE "COMPOSITION_BUILDING_DLL"
 )
+
 ament_target_dependencies(
   policy_node
   class_loader
@@ -51,63 +53,72 @@ ament_target_dependencies(
   rclcpp
   sensor_msgs
 )
+
 rclcpp_components_register_nodes(policy_node "planb::PolicyNode")
 set(node_plugins "${node_plugins}policy::PolicyNode;$<TARGET_FILE:policy_node>\n")
 
 #=============
-# Planb vision node
+# Planb camera node
 #=============
-
 add_library(
-  vision_node SHARED
-  src/vision_node.cpp
+  camera_node SHARED
+  src/camera_node.cpp
 )
+
 target_compile_definitions(
-  vision_node
+  camera_node
   PRIVATE "COMPOSITION_BUILDING_DLL"
 )
+
 ament_target_dependencies(
-  vision_node
+  camera_node
   class_loader
   OpenCV
   rclcpp
   sensor_msgs
+  std_msgs
 )
-rclcpp_components_register_nodes(vision_node "planb::VisionNode")
-set(node_plugins "${node_plugins}vision::VisionNode;$<TARGET_FILE:vision_node>\n")
+
+rclcpp_components_register_nodes(camera_node "planb::CameraNode")
+set(node_plugins "${node_plugins}camera::CameraNode;$<TARGET_FILE:camera_node>\n")
 
 #=============
 # Planb policy main
 #=============
-
 add_executable(
   policy_main
   src/policy_main.cpp
 )
+
 target_link_libraries(
   policy_main
   policy_node
 )
+
 ament_target_dependencies(
   policy_main
   rclcpp
 )
 
 #=============
-# Planb vision main
+# Planb camera main
 #=============
-
 add_executable(
-  vision_main
-  src/vision_main.cpp
+  camera
+  src/camera.cpp
 )
+
 target_link_libraries(
-  vision_main
-  vision_node
+  camera
+  camera_node
 )
+
 ament_target_dependencies(
-  vision_main
+  camera
   rclcpp
+  OpenCV
+  sensor_msgs
+  std_msgs
 )
 
 #=============
@@ -119,11 +130,10 @@ ament_export_dependencies(class_loader)
 
 ament_export_include_directories(include)
 
-ament_export_targets(export_policy_node export_vision_node)
+ament_export_targets(export_policy_node export_camera_node)
 
-ament_export_libraries(policy_node vision_node)
+ament_export_libraries(policy_node camera_node)
 
-ament_package()
 
 #=============
 # Install
@@ -140,21 +150,17 @@ install(
 )
 
 install(
-  TARGETS vision_node
-  EXPORT export_vision_node
+  TARGETS camera_node
+  EXPORT export_camera_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
 
 # Install executables
-install(
-  TARGETS policy_main
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-  TARGETS vision_main
+install(TARGETS
+  policy_main
+  camera
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -163,3 +169,5 @@ install(
   DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
+
+ament_package()

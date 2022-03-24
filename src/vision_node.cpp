@@ -24,8 +24,7 @@ namespace planb
     }
   }
 
-  void convert_frame_to_message(
-      const cv::Mat &frame, sensor_msgs::msg::Image &msg)
+  void convert_frame_to_message(const cv::Mat &frame, sensor_msgs::msg::Image &msg)
   {
     // copy cv information into ros message
     msg.height = frame.rows;
