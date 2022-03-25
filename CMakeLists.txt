@@ -23,6 +23,13 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Aruco.msg"
+  "msg/Box.msg"
+)
+ament_export_dependencies(rosidl_default_runtime)
 
 # Package includes not needed for CMake >= 2.8.11
 include_directories(
@@ -32,30 +39,6 @@ include_directories(
 
 # Create ament index resource which references the libraries in the binary dir
 set(node_plugins "")
-
-#=============
-# Planb policy node
-#=============
-add_library(
-  policy_node SHARED
-  src/policy_node.cpp
-)
-
-target_compile_definitions(
-  policy_node
-  PRIVATE "COMPOSITION_BUILDING_DLL"
-)
-
-ament_target_dependencies(
-  policy_node
-  class_loader
-  OpenCV
-  rclcpp
-  sensor_msgs
-)
-
-rclcpp_components_register_nodes(policy_node "planb::PolicyNode")
-set(node_plugins "${node_plugins}policy::PolicyNode;$<TARGET_FILE:policy_node>\n")
 
 #=============
 # Planb camera node
@@ -83,38 +66,54 @@ rclcpp_components_register_nodes(camera_node "planb::CameraNode")
 set(node_plugins "${node_plugins}camera::CameraNode;$<TARGET_FILE:camera_node>\n")
 
 #=============
-# Planb policy main
+# Planb aruco node
 #=============
-add_executable(
-  policy_main
-  src/policy_main.cpp
+add_library(
+  aruco_node SHARED
+  src/aruco_node.cpp
 )
 
-target_link_libraries(
-  policy_main
-  policy_node
+target_compile_definitions(
+  aruco_node
+  PRIVATE "COMPOSITION_BUILDING_DLL"
 )
 
 ament_target_dependencies(
-  policy_main
+  aruco_node
+  class_loader
+  OpenCV
   rclcpp
+  sensor_msgs
+  std_msgs
 )
+
+rclcpp_components_register_nodes(aruco_node "planb::ArucoNode")
+set(node_plugins "${node_plugins}aruco::ArucoNode;$<TARGET_FILE:aruco_node>\n")
+
+rosidl_target_interfaces(aruco_node
+${PROJECT_NAME} "rosidl_typesupport_cpp")
+
 
 #=============
 # Planb camera main
 #=============
-add_executable(
-  camera
-  src/camera.cpp
-)
-
-target_link_libraries(
-  camera
-  camera_node
-)
-
+add_executable(camera src/camera.cpp)
+target_link_libraries(camera camera_node)
 ament_target_dependencies(
   camera
+  rclcpp
+  OpenCV
+  sensor_msgs
+  std_msgs
+)
+
+#=============
+# Planb aruco main
+#=============
+add_executable(aruco src/aruco.cpp)
+target_link_libraries(aruco aruco_node)
+ament_target_dependencies(
+  aruco
   rclcpp
   OpenCV
   sensor_msgs
@@ -130,9 +129,15 @@ ament_export_dependencies(class_loader)
 
 ament_export_include_directories(include)
 
-ament_export_targets(export_policy_node export_camera_node)
+ament_export_targets(
+  export_camera_node
+  export_aruco_node
+)
 
-ament_export_libraries(policy_node camera_node)
+ament_export_libraries(
+  camera_node
+  aruco_node
+)
 
 
 #=============
@@ -140,15 +145,6 @@ ament_export_libraries(policy_node camera_node)
 #=============
 
 # Install nodes
-
-install(
-  TARGETS policy_node
-  EXPORT export_policy_node
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
 install(
   TARGETS camera_node
   EXPORT export_camera_node
@@ -157,10 +153,19 @@ install(
   RUNTIME DESTINATION bin
 )
 
+# Install nodes
+install(
+  TARGETS aruco_node
+  EXPORT export_aruco_node
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
 # Install executables
 install(TARGETS
-  policy_main
   camera
+  aruco
   DESTINATION lib/${PROJECT_NAME}
 )
 
