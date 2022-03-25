@@ -38,7 +38,7 @@ void ArucoNode::update_status()
 void ArucoNode::stream_callback(const sensor_msgs::msg::Image::UniquePtr msg)
 {
     std::vector<int> ids;
-    std::vector<std::vector<cv::Point2i>> corners, rejected;
+    std::vector<std::vector<cv::Point2f>> corners, rejected;
 
     cv::Mat frame(
         msg->height, msg->width, planb::encoding2mat_type(msg->encoding),
@@ -52,8 +52,8 @@ void ArucoNode::stream_callback(const sensor_msgs::msg::Image::UniquePtr msg)
             planb_ros2::msg::Box box;
             auto _id = ids.at(i);
             auto corner = corners.at(i);
-            std::vector<int> xs = {corner.at(0).x, corner.at(1).x, corner.at(2).x, corner.at(3).x};
-            std::vector<int> ys = {corner.at(0).y, corner.at(1).y, corner.at(2).y, corner.at(3).y};
+            std::vector<float> xs = {corner.at(0).x, corner.at(1).x, corner.at(2).x, corner.at(3).x};
+            std::vector<float> ys = {corner.at(0).y, corner.at(1).y, corner.at(2).y, corner.at(3).y};
             auto result_x = std::minmax_element(std::begin(xs), std::end(xs));
             auto result_y = std::minmax_element(std::begin(ys), std::end(ys));
             box.id = _id;
