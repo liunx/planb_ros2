@@ -95,6 +95,34 @@ set(node_plugins "${node_plugins}aruco::ArucoNode;$<TARGET_FILE:aruco_node>\n")
 rosidl_target_interfaces(aruco_node
 ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
+#=============
+# Planb tracker node
+#=============
+add_library(
+  tracker_node SHARED
+  src/tracker_node.cpp
+)
+
+target_compile_definitions(
+  tracker_node
+  PRIVATE "COMPOSITION_BUILDING_DLL"
+)
+
+ament_target_dependencies(
+  tracker_node
+  class_loader
+  OpenCV
+  rclcpp
+  sensor_msgs
+  std_msgs
+)
+
+rclcpp_components_register_nodes(tracker_node "planb::TrackerNode")
+set(node_plugins "${node_plugins}tracker::TrackerNode;$<TARGET_FILE:tracker_node>\n")
+
+rosidl_target_interfaces(tracker_node
+${PROJECT_NAME} "rosidl_typesupport_cpp")
+
 
 #=============
 # Planb camera main
@@ -123,6 +151,19 @@ ament_target_dependencies(
 )
 
 #=============
+# Planb tracker main
+#=============
+add_executable(tracker src/tracker.cpp)
+target_link_libraries(tracker tracker_node)
+ament_target_dependencies(
+  tracker
+  rclcpp
+  OpenCV
+  sensor_msgs
+  std_msgs
+)
+
+#=============
 # Export
 # Best practice, see https://discourse.ros.org/t/ament-best-practice-for-sharing-libraries/3602
 #=============
@@ -134,11 +175,13 @@ ament_export_include_directories(include)
 ament_export_targets(
   export_camera_node
   export_aruco_node
+  export_tracker_node
 )
 
 ament_export_libraries(
   camera_node
   aruco_node
+  tracker_node
 )
 
 
@@ -147,6 +190,7 @@ ament_export_libraries(
 #=============
 
 # Install nodes
+# camera
 install(
   TARGETS camera_node
   EXPORT export_camera_node
@@ -155,10 +199,19 @@ install(
   RUNTIME DESTINATION bin
 )
 
-# Install nodes
+# aruco
 install(
   TARGETS aruco_node
   EXPORT export_aruco_node
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+# tracker
+install(
+  TARGETS tracker_node
+  EXPORT export_tracker_node
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
@@ -168,6 +221,7 @@ install(
 install(TARGETS
   camera
   aruco
+  tracker
   DESTINATION lib/${PROJECT_NAME}
 )
 
