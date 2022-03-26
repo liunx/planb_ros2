@@ -123,6 +123,33 @@ set(node_plugins "${node_plugins}tracker::TrackerNode;$<TARGET_FILE:tracker_node
 rosidl_target_interfaces(tracker_node
 ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
+#=============
+# Planb hardware node
+#=============
+add_library(
+  hardware_node SHARED
+  src/hardware_node.cpp
+)
+
+target_compile_definitions(
+  hardware_node
+  PRIVATE "COMPOSITION_BUILDING_DLL"
+)
+
+ament_target_dependencies(
+  hardware_node
+  class_loader
+  OpenCV
+  rclcpp
+  sensor_msgs
+  std_msgs
+)
+
+rclcpp_components_register_nodes(hardware_node "planb::HardwareNode")
+set(node_plugins "${node_plugins}hardware::HardwareNode;$<TARGET_FILE:hardware_node>\n")
+
+rosidl_target_interfaces(hardware_node
+${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #=============
 # Planb camera main
@@ -164,6 +191,19 @@ ament_target_dependencies(
 )
 
 #=============
+# Planb hardware main
+#=============
+add_executable(hardware src/hardware.cpp)
+target_link_libraries(hardware hardware_node)
+ament_target_dependencies(
+  hardware
+  rclcpp
+  OpenCV
+  sensor_msgs
+  std_msgs
+)
+
+#=============
 # Export
 # Best practice, see https://discourse.ros.org/t/ament-best-practice-for-sharing-libraries/3602
 #=============
@@ -176,12 +216,14 @@ ament_export_targets(
   export_camera_node
   export_aruco_node
   export_tracker_node
+  export_hardware_node
 )
 
 ament_export_libraries(
   camera_node
   aruco_node
   tracker_node
+  hardware_node
 )
 
 
@@ -217,11 +259,21 @@ install(
   RUNTIME DESTINATION bin
 )
 
+# hardware
+install(
+  TARGETS hardware_node
+  EXPORT export_hardware_node
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
 # Install executables
 install(TARGETS
   camera
   aruco
   tracker
+  hardware
   DESTINATION lib/${PROJECT_NAME}
 )
 
