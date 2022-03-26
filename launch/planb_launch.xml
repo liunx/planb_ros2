@@ -1,4 +1,7 @@
 <launch>
+  <node pkg="planb_ros2" exec="brain" output="screen">
+    <param name="bt_xml" value="./demo.xml"/>
+  </node>
   <node pkg="planb_ros2" exec="camera" output="screen" >
     <param name="width" value="640"/>
     <param name="height" value="480"/>

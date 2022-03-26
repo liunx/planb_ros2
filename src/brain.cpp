@@ -10,7 +10,10 @@
 void bind_actions(BT::BehaviorTreeFactory &factory)
 {
   static BehaviorTreeAction action = BehaviorTreeAction();
-  factory.registerSimpleAction("FetchData", std::bind(&BehaviorTreeAction::fetch_data, &action));
+  factory.registerSimpleAction("CheckCameraIdle", std::bind(&BehaviorTreeAction::check_camera_idle, &action));
+  factory.registerSimpleAction("SetCameraIdle", std::bind(&BehaviorTreeAction::set_camera_idle, &action));
+  factory.registerSimpleAction("CheckCameraRunning", std::bind(&BehaviorTreeAction::check_camera_running, &action));
+  factory.registerSimpleAction("SetCameraRunning", std::bind(&BehaviorTreeAction::set_camera_running, &action));
 }
 
 int main(int argc, char **argv)
@@ -27,6 +30,8 @@ int main(int argc, char **argv)
   BT::BehaviorTreeFactory factory;
   bind_actions(factory);
   auto tree = factory.createTreeFromFile(bt_xml);
+  BT::StdCoutLogger logger_cout(tree);
+  BT::printTreeRecursively(tree.rootNode());
   while (rclcpp::ok()) {
     tree.tickRoot();
     std::this_thread::sleep_for(std::chrono::milliseconds(30));

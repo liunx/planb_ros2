@@ -36,7 +36,7 @@ void CameraNode::loop()
             publish_status();
             idle();
         }
-        else if (mode_ == "Run") {
+        else if (mode_ == "Running") {
             publish_status();
             running();
         }
@@ -82,14 +82,14 @@ void CameraNode::running()
     cam_.set(cv::CAP_PROP_FRAME_WIDTH, width_);
     cam_.set(cv::CAP_PROP_FRAME_HEIGHT, height_);
     cv::Mat frame;
-    RCLCPP_INFO(this->get_logger(), "In Run mode...");
+    RCLCPP_INFO(this->get_logger(), "In Running mode...");
 
     std_msgs::msg::String msg;
     rclcpp::MessageInfo msg_info;
     while (rclcpp::ok())
     {
         if (sub_cmd_->take(msg, msg_info)) {
-            if (msg.data != "Run") {
+            if (msg.data != "Running") {
                 mode_ = msg.data;
                 break;
             }
