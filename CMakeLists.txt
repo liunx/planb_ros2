@@ -23,6 +23,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(behaviortree_cpp_v3 REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -204,6 +205,21 @@ ament_target_dependencies(
 )
 
 #=============
+# Planb brain main
+#=============
+add_executable(brain src/brain.cpp src/behaviortree_action.cpp) 
+ament_target_dependencies(
+  brain
+  rclcpp
+  OpenCV
+  behaviortree_cpp_v3
+  sensor_msgs
+  std_msgs
+)
+rosidl_target_interfaces(brain
+${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+#=============
 # Export
 # Best practice, see https://discourse.ros.org/t/ament-best-practice-for-sharing-libraries/3602
 #=============
@@ -274,6 +290,7 @@ install(TARGETS
   aruco
   tracker
   hardware
+  brain
   DESTINATION lib/${PROJECT_NAME}
 )
 
