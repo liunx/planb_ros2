@@ -220,6 +220,20 @@ rosidl_target_interfaces(brain
 ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #=============
+# Planb monitor main
+#=============
+add_executable(monitor src/monitor.cpp) 
+ament_target_dependencies(
+  monitor
+  rclcpp
+  OpenCV
+  sensor_msgs
+  std_msgs
+)
+rosidl_target_interfaces(monitor
+${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+#=============
 # Export
 # Best practice, see https://discourse.ros.org/t/ament-best-practice-for-sharing-libraries/3602
 #=============
@@ -291,6 +305,7 @@ install(TARGETS
   tracker
   hardware
   brain
+  monitor
   DESTINATION lib/${PROJECT_NAME}
 )
 

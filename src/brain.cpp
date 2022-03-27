@@ -10,10 +10,24 @@
 void bind_actions(BT::BehaviorTreeFactory &factory)
 {
   static BehaviorTreeAction action = BehaviorTreeAction();
+  // camera
   factory.registerSimpleAction("CheckCameraIdle", std::bind(&BehaviorTreeAction::check_camera_idle, &action));
   factory.registerSimpleAction("SetCameraIdle", std::bind(&BehaviorTreeAction::set_camera_idle, &action));
   factory.registerSimpleAction("CheckCameraRunning", std::bind(&BehaviorTreeAction::check_camera_running, &action));
   factory.registerSimpleAction("SetCameraRunning", std::bind(&BehaviorTreeAction::set_camera_running, &action));
+  // aruco
+  factory.registerSimpleAction("CheckArucoIdle", std::bind(&BehaviorTreeAction::check_aruco_idle, &action));
+  factory.registerSimpleAction("SetArucoIdle", std::bind(&BehaviorTreeAction::set_aruco_idle, &action));
+  factory.registerSimpleAction("CheckArucoRunning", std::bind(&BehaviorTreeAction::check_aruco_running, &action));
+  factory.registerSimpleAction("SetArucoRunning", std::bind(&BehaviorTreeAction::set_aruco_running, &action));
+  factory.registerSimpleAction("DetectArucoMarkers", std::bind(&BehaviorTreeAction::detect_aruco_markers, &action));
+  // tracker
+  factory.registerSimpleAction("CheckTrackerIdle", std::bind(&BehaviorTreeAction::check_tracker_idle, &action));
+  factory.registerSimpleAction("SetTrackerIdle", std::bind(&BehaviorTreeAction::set_tracker_idle, &action));
+  factory.registerSimpleAction("CheckTrackerRunning", std::bind(&BehaviorTreeAction::check_tracker_running, &action));
+  factory.registerSimpleAction("SetTrackerRunning", std::bind(&BehaviorTreeAction::set_tracker_running, &action));
+  // hardware
+  factory.registerSimpleAction("ResetHardware", std::bind(&BehaviorTreeAction::reset_hardware, &action));
 }
 
 int main(int argc, char **argv)
@@ -34,7 +48,7 @@ int main(int argc, char **argv)
   BT::printTreeRecursively(tree.rootNode());
   while (rclcpp::ok()) {
     tree.tickRoot();
-    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
   }
   // Shut down ROS
   rclcpp::shutdown();

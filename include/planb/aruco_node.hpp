@@ -22,7 +22,7 @@ private:
     std::string status_;
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr sub_stream_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_status_;
-    rclcpp::Publisher<planb_ros2::msg::Aruco>::SharedPtr pub_aruco_;
+    rclcpp::Publisher<planb_ros2::msg::Aruco>::SharedPtr pub_markers_;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_cmd_;
     cv::Ptr<cv::aruco::Dictionary> dictionary_;
     cv::Ptr<cv::aruco::DetectorParameters> detector_params_;

@@ -61,6 +61,7 @@ void TrackerNode::stream_callback(const sensor_msgs::msg::Image::UniquePtr msg)
     }
 
     if (tracker_->update(frame, bbox_)) {
+        //TODO publish bbox
     }
     else {
         flag_init_ = false;

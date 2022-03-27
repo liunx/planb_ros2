@@ -14,7 +14,7 @@ ArucoNode::ArucoNode(const rclcpp::NodeOptions &options)
     detector_params_ = cv::aruco::DetectorParameters::create();
 
     pub_status_  = this->create_publisher<std_msgs::msg::String>("/planb/aruco/status", 1);
-    pub_aruco_  = this->create_publisher<planb_ros2::msg::Aruco>("/planb/aruco/aruco", 1);
+    pub_markers_  = this->create_publisher<planb_ros2::msg::Aruco>("/planb/aruco/markers", 1);
     auto do_nothing = [](sensor_msgs::msg::Image::UniquePtr) { assert(false); };
     // In Idle mode, streaming nothing
     sub_stream_ = this->create_subscription<sensor_msgs::msg::Image>("/planb/camera/null", 10, do_nothing);
@@ -63,21 +63,21 @@ void ArucoNode::stream_callback(const sensor_msgs::msg::Image::UniquePtr msg)
             box.height = *result_y.second - *result_y.first;
             _msg.data.push_back(box);
         }
-        pub_aruco_->publish(std::move(_msg));
+        pub_markers_->publish(std::move(_msg));
     }
 }
 
 void ArucoNode::cmd_callback(const std_msgs::msg::String &msg)
 {
-    if (msg.data == "Run")
+    if (msg.data == "Running")
     {
-        if (status_ != "Run")
+        if (status_ != "Running")
         {
             sub_stream_ = this->create_subscription<sensor_msgs::msg::Image>(
                 "/planb/camera/stream",
                 10,
                 std::bind(&ArucoNode::stream_callback, this, _1));
-            status_ = "Run";
+            status_ = "Running";
             update_status();
         }
     }
