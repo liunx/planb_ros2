@@ -21,7 +21,7 @@ private:
     void publish_status();
     cv::VideoCapture cam_;
     uint32_t device_id_, width_, height_;
-    std::string mode_;
+    std::string status_;
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr pub_stream_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_status_;

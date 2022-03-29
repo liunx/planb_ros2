@@ -61,13 +61,20 @@ void TrackerNode::stream_callback(const sensor_msgs::msg::Image::UniquePtr msg)
     }
 
     if (tracker_->update(frame, bbox_)) {
-        //TODO publish bbox
+        planb_ros2::msg::Box msg;
+        msg.frame_width = frame.cols;
+        msg.frame_height = frame.rows;
+        msg.x = bbox_.x;
+        msg.y = bbox_.y;
+        msg.width = bbox_.width;
+        msg.height = bbox_.height;
+        pub_data_->publish(std::move(msg));
     }
     else {
         flag_init_ = false;
-        RCLCPP_ERROR(this->get_logger(), "Update tracker failed!");
-        status_ = "Idle";
         stream_off();
+        status_ = "Idle";
+        publish_status();
     }
 }
 

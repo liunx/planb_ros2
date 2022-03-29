@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="BehaviorTree">
+    <!-- ////////// -->
+    <BehaviorTree ID="BehaviorTree">
+        <Sequence>
+            <Action ID="Wait"/>
+            <IfThenElse>
+                <Action ID="CheckCameraRunning"/>
+                <AlwaysSuccess/>
+                <Sequence>
+                    <Action ID="SetArucoIdle"/>
+                    <Action ID="ResetHardware"/>
+                    <Action ID="SetCameraRunning"/>
+                    <AlwaysFailure/>
+                </Sequence>
+            </IfThenElse>
+            <IfThenElse>
+                <Action ID="CheckHardwareReady"/>
+                <AlwaysSuccess/>
+                <Sequence>
+                    <Action ID="InitHardware"/>
+                    <AlwaysFailure/>
+                </Sequence>
+            </IfThenElse>
+            <IfThenElse>
+                <Action ID="CheckArucoRunning"/>
+                <IfThenElse>
+                    <Action ID="CheckTrackerRunning"/>
+                    <Action ID="FollowTarget"/>
+                    <IfThenElse>
+                        <Action ID="DetectArucoMarkers"/>
+                        <Sequence>
+                            <Action ID="TrackingTarget"/>
+                            <Action ID="SetArucoIdle"/>
+                        </Sequence>
+                        <Action ID="StopFollow"/>
+                    </IfThenElse>
+                </IfThenElse>
+                <Action ID="SetArucoRunning"/>
+            </IfThenElse>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="CheckHardware">
+        <Fallback>
+            <Action ID="CheckHardwareReady"/>
+            <Action ID="InitHardware"/>
+            <Delay delay_msec="500">
+                <AlwaysFailure/>
+            </Delay>
+        </Fallback>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <TreeNodesModel>
+        <Action ID="CheckArucoRunning"/>
+        <Action ID="CheckCameraRunning"/>
+        <SubTree ID="CheckHardware"/>
+        <Action ID="CheckHardwareReady"/>
+        <Action ID="CheckTrackerRunning"/>
+        <Action ID="DetectArucoMarkers"/>
+        <Action ID="FollowTarget"/>
+        <Action ID="InitHardware"/>
+        <Action ID="Monitor"/>
+        <Action ID="ResetHardware"/>
+        <Action ID="SetArucoIdle"/>
+        <Action ID="SetArucoRunning"/>
+        <Action ID="SetCameraRunning"/>
+        <Action ID="StopFollow"/>
+        <Action ID="TrackingTarget"/>
+        <Action ID="Wait"/>
+    </TreeNodesModel>
+    <!-- ////////// -->
+</root>
+

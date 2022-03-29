@@ -4,6 +4,7 @@
 #include "std_msgs/msg/string.hpp"
 #include "behaviortree_cpp_v3/bt_factory.h"
 #include "planb_ros2/msg/aruco.hpp"
+#include "planb_ros2/msg/box.hpp"
 
 class BehaviorTreeAction
 {
@@ -23,11 +24,16 @@ public:
     BT::NodeStatus detect_aruco_markers();
     // tracker
     BT::NodeStatus check_tracker_idle();
-    BT::NodeStatus set_tracker_idle();
     BT::NodeStatus check_tracker_running();
-    BT::NodeStatus set_tracker_running();
+    BT::NodeStatus tracking_target();
     // hardware
+    BT::NodeStatus init_hardware();
     BT::NodeStatus reset_hardware();
+    BT::NodeStatus check_hardware_ready();
+    // others
+    BT::NodeStatus wait();
+    BT::NodeStatus follow_target();
+    BT::NodeStatus stop_follow();
 
 private:
     rclcpp::Node::SharedPtr node_;
@@ -44,10 +50,14 @@ private:
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_aruco_status_;
     rclcpp::Subscription<planb_ros2::msg::Aruco>::SharedPtr sub_aruco_markers_;
     std::string aruco_status_;
+    planb_ros2::msg::Aruco aruco_msg_;
     // tracker
-    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_tracker_cmd_;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_tracker_status_;
+    rclcpp::Publisher<planb_ros2::msg::Box>::SharedPtr pub_tracker_input_;
+    rclcpp::Subscription<planb_ros2::msg::Box>::SharedPtr sub_tracker_data_;
     std::string tracker_status_;
+    // others
+    bool flag_follow_stopped_;
 };
 
 #endif

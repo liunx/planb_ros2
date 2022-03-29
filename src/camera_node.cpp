@@ -6,7 +6,7 @@ using namespace std::chrono_literals;
 
 CameraNode::CameraNode(const rclcpp::NodeOptions &options)
     : Node("camera", options),
-      mode_("Idle")
+      status_("Idle")
 {
     width_ = this->declare_parameter("width", 640);
     height_ = this->declare_parameter("height", 480);
@@ -25,23 +25,22 @@ CameraNode::~CameraNode()
 void CameraNode::publish_status()
 {
     std_msgs::msg::String msg;
-    msg.data = mode_;
+    msg.data = status_;
     pub_status_->publish(std::move(msg));
 }
 
 void CameraNode::loop()
 {
     while (rclcpp::ok()) {
-        if (mode_ == "Idle") {
+        if (status_ == "Idle") {
             publish_status();
             idle();
         }
-        else if (mode_ == "Running") {
-            publish_status();
+        else if (status_ == "Running") {
             running();
         }
         else {
-            mode_ = "Idle";
+            status_ = "Idle";
         }
     }
 }
@@ -62,7 +61,7 @@ void CameraNode::idle()
                 {
                     if (msg.data != "Idle")
                     {
-                        mode_ = msg.data;
+                        status_ = msg.data;
                         break;
                     }
                 }
@@ -76,13 +75,14 @@ void CameraNode::running()
     cam_.open(device_id_);
     if (!cam_.isOpened()) {
         RCLCPP_ERROR(this->get_logger(), "Failed to open camera %d!", device_id_);
-        mode_ = "Idle";
+        status_ = "Idle";
         return;
     }
     cam_.set(cv::CAP_PROP_FRAME_WIDTH, width_);
     cam_.set(cv::CAP_PROP_FRAME_HEIGHT, height_);
     cv::Mat frame;
     RCLCPP_INFO(this->get_logger(), "In Running mode...");
+    publish_status();
 
     std_msgs::msg::String msg;
     rclcpp::MessageInfo msg_info;
@@ -90,7 +90,7 @@ void CameraNode::running()
     {
         if (sub_cmd_->take(msg, msg_info)) {
             if (msg.data != "Running") {
-                mode_ = msg.data;
+                status_ = msg.data;
                 break;
             }
         }
@@ -98,7 +98,7 @@ void CameraNode::running()
         if (frame.empty())
         {
             RCLCPP_ERROR(this->get_logger(), "Frame is empty, breaking!");
-            mode_ = "Idle";
+            status_ = "Idle";
             break;
         }
         auto msg = std::make_unique<sensor_msgs::msg::Image>();

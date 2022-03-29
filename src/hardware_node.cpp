@@ -16,10 +16,10 @@ HardwareNode::HardwareNode(const rclcpp::NodeOptions &options)
     baud_ = this->declare_parameter("baud", 9600);
 
     pub_status_  = this->create_publisher<std_msgs::msg::String>("/planb/hardware/status", 1);
-    sub_input_ = this->create_subscription<std_msgs::msg::String>(
-        "/planb/hardware/input",
+    sub_cmd_ = this->create_subscription<std_msgs::msg::String>(
+        "/planb/hardware/cmd",
         1,
-        std::bind(&HardwareNode::input_callback, this, _1));
+        std::bind(&HardwareNode::cmd_callback, this, _1));
 }
 
 HardwareNode::~HardwareNode()
@@ -142,7 +142,7 @@ void HardwareNode::publish_status()
     pub_status_->publish(std::move(msg));
 }
 
-void HardwareNode::input_callback(const std_msgs::msg::String &msg)
+void HardwareNode::cmd_callback(const std_msgs::msg::String &msg)
 {
     if (msg.data == "Init") {
         if (serial_init(dev_.c_str(), baud_) == 0) {
@@ -151,6 +151,11 @@ void HardwareNode::input_callback(const std_msgs::msg::String &msg)
         else {
             status_ = "Fault";
         }
+        publish_status();
+        return;
+    }
+
+    if (status_ != "Ready") {
         publish_status();
         return;
     }

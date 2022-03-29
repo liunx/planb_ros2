@@ -23,7 +23,7 @@ public:
 private:
     int serial_init(const char *dev, const int baud);
     void publish_status();
-    void input_callback(const std_msgs::msg::String &msg);
+    void cmd_callback(const std_msgs::msg::String &msg);
     void reset();
     void forward();
     void backward();
@@ -39,7 +39,7 @@ private:
     uint8_t power_;
     uint8_t angle_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_status_;
-    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_input_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_cmd_;
 };
 
 #endif
