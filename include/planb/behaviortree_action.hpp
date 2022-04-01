@@ -60,4 +60,56 @@ private:
     bool flag_follow_stopped_;
 };
 
+class ArucoAction : public BT::SyncActionNode
+{
+public:
+    ArucoAction(const std::string &name, const BT::NodeConfiguration &config);
+    BT::NodeStatus get_status();
+    BT::NodeStatus get_markers();
+    BT::NodeStatus turn_on();
+    BT::NodeStatus turn_off();
+
+    static BT::PortsList providedPorts()
+    {
+        return {BT::OutputPort<std::string>("ids"),
+                BT::OutputPort<std::string>("status")};
+    }
+
+    // You must override the virtual function tick()
+    BT::NodeStatus tick() override;
+
+private:
+    std::string name_;
+    std::string status_;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_cmd_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_status_;
+    rclcpp::Subscription<planb_ros2::msg::Aruco>::SharedPtr sub_markers_;
+};
+
+class TrackerAction : public BT::SyncActionNode
+{
+public:
+    ArucoAction(const std::string &name, const BT::NodeConfiguration &config);
+    BT::NodeStatus get_status();
+    BT::NodeStatus get_markers();
+    BT::NodeStatus turn_on();
+    BT::NodeStatus turn_off();
+
+    static BT::PortsList providedPorts()
+    {
+        return {BT::OutputPort<std::string>("ids"),
+                BT::OutputPort<std::string>("status")};
+    }
+
+    // You must override the virtual function tick()
+    BT::NodeStatus tick() override;
+
+private:
+    std::string name_;
+    std::string status_;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_cmd_;
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_status_;
+    rclcpp::Subscription<planb_ros2::msg::Aruco>::SharedPtr sub_markers_;
+};
+
 #endif

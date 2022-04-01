@@ -1,4 +1,6 @@
 #include <string>
+#include <memory>
+#include <stdexcept>
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "rclcpp/rclcpp.hpp"
@@ -69,5 +71,18 @@ namespace planb {
         msg.data.resize(size);
         memcpy(&msg.data[0], frame.data, size);
         msg.header.frame_id = "camera_frame";
+    }
+
+    template <typename... Args>
+    std::string string_format(const std::string &format, Args... args)
+    {
+        size_t size = snprintf(nullptr, 0, format.c_str(), args...) + 1; // Extra space for '\0'
+        if (size <= 0)
+        {
+            throw std::runtime_error("Error during formatting.");
+        }
+        std::unique_ptr<char[]> buf(new char[size]);
+        snprintf(buf.get(), size, format.c_str(), args...);
+        return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
     }
 }

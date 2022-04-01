@@ -34,6 +34,8 @@ void bind_actions(BT::BehaviorTreeFactory &factory)
     factory.registerSimpleAction("Wait", std::bind(&BehaviorTreeAction::wait, &action));
     factory.registerSimpleAction("FollowTarget", std::bind(&BehaviorTreeAction::follow_target, &action));
     factory.registerSimpleAction("StopFollow", std::bind(&BehaviorTreeAction::stop_follow, &action));
+    // aruco
+    factory.registerNodeType<ArucoAction>("GetArucoStatus");
 }
 
 int main(int argc, char **argv)

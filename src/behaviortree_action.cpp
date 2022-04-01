@@ -1,4 +1,5 @@
 #include "planb/behaviortree_action.hpp"
+#include "planb/common.hpp"
 
 using namespace std::chrono_literals;
 
@@ -274,3 +275,84 @@ BT::NodeStatus BehaviorTreeAction::stop_follow()
     pub_hardware_cmd_->publish(std::move(msg));
     return stat;
 }
+
+// class ArucoAction  {
+ArucoAction::ArucoAction(const std::string &name, const BT::NodeConfiguration &config)
+    : BT::SyncActionNode(name, config),
+      name_(name),
+      status_("Unknown")
+{
+    auto node_ = rclcpp::Node::make_shared("aruco_action");
+    auto do_nothing = [](std_msgs::msg::String::UniquePtr)
+    { assert(false); };
+    auto do_nothing2 = [](planb_ros2::msg::Aruco::UniquePtr)
+    { assert(false); };
+    sub_status_ = node_->create_subscription<std_msgs::msg::String>("/planb/aruco/status", 1, do_nothing);
+    sub_markers_ = node_->create_subscription<planb_ros2::msg::Aruco>("/planb/aruco/markers", 1, do_nothing2);
+    pub_cmd_ = node_->create_publisher<std_msgs::msg::String>("/planb/aruco/cmd", 1);
+}
+
+BT::NodeStatus ArucoAction::get_status()
+{
+    BT::NodeStatus stat = BT::NodeStatus::SUCCESS;
+    std_msgs::msg::String msg;
+    rclcpp::MessageInfo msg_info;
+    if (sub_status_->take(msg, msg_info))
+    {
+        stat = BT::NodeStatus::SUCCESS;
+        status_ = msg.data;
+    }
+    setOutput("status", status_);
+    return stat;
+}
+
+BT::NodeStatus ArucoAction::turn_on()
+{
+    std_msgs::msg::String msg;
+    msg.data = "Running";
+    pub_cmd_->publish(std::move(msg));
+    return BT::NodeStatus::SUCCESS;
+}
+
+BT::NodeStatus ArucoAction::turn_off()
+{
+    std_msgs::msg::String msg;
+    msg.data = "Idle";
+    pub_cmd_->publish(std::move(msg));
+    return BT::NodeStatus::SUCCESS;
+}
+
+BT::NodeStatus ArucoAction::get_markers()
+{
+    BT::NodeStatus stat = BT::NodeStatus::FAILURE;
+    rclcpp::MessageInfo msg_info;
+    planb_ros2::msg::Aruco msg_markers;
+    if (sub_markers_->take(msg_markers, msg_info)) {
+        std::string ids = "";
+        for (auto marker : msg_markers.data)
+        {
+            ids += planb::string_format("%d,", marker.id);
+        }
+        setOutput("ids", ids);
+        stat = BT::NodeStatus::SUCCESS;
+    }
+    return stat;
+}
+
+BT::NodeStatus ArucoAction::tick()
+{
+    BT::NodeStatus stat = BT::NodeStatus::FAILURE;
+    if (name_ == "GetArucoStatus")
+        stat = get_status();
+    else if (name_ == "TurnArucoOn")
+        stat = turn_on();
+    else if (name_ == "TurnArucoOff")
+        stat = turn_off();
+    else if (name_ == "GetArucoMarkers")
+        stat = get_markers();
+    else
+        throw BT::RuntimeError("Unsupported action:", name_);
+    return stat;
+}
+
+// } class ArucoAction
