@@ -1,110 +1,110 @@
 #include <thread>
+#include <chrono>
 #include "planb/camera_node.hpp"
 #include "planb/common.hpp"
 
 using namespace std::chrono_literals;
+using std::placeholders::_1;
 
 CameraNode::CameraNode(const rclcpp::NodeOptions &options)
     : Node("camera", options),
-      status_("Idle")
+      status_("OFF")
 {
     width_ = this->declare_parameter("width", 640);
     height_ = this->declare_parameter("height", 480);
     device_id_ = this->declare_parameter("device_id", 0);
-    auto qos = rclcpp::QoS(10);
-    pub_stream_  = this->create_publisher<sensor_msgs::msg::Image>("/planb/camera/stream", qos);
+    msec_ = this->declare_parameter("msec", 30);
+
+    pub_stream_  = this->create_publisher<sensor_msgs::msg::Image>("/planb/camera/stream", 1);
     pub_status_  = this->create_publisher<std_msgs::msg::String>("/planb/camera/status", 1);
-    auto do_nothing = [](std_msgs::msg::String::UniquePtr) { assert(false); };
-    sub_cmd_ = this->create_subscription<std_msgs::msg::String>("/planb/camera/cmd", 1, do_nothing);
+
+    sub_cmd_ = this->create_subscription<planb_ros2::msg::Cmd>(
+        "/planb/camera/cmd",
+        1,
+        std::bind(&CameraNode::cmd_callback, this, _1));
+
+    auto handle_service =
+        [this](const std::shared_ptr<rmw_request_id_t> request_header,
+               const std::shared_ptr<planb_ros2::srv::CameraInfo::Request> request,
+               std::shared_ptr<planb_ros2::srv::CameraInfo::Response> response) -> void
+    {
+        (void)request_header;
+        (void)request;
+        response->width = width_;
+        response->height = height_;
+    };
+    srv_ = create_service<planb_ros2::srv::CameraInfo>("camera_info", handle_service);
 }
 
 CameraNode::~CameraNode()
 {
 }
 
-void CameraNode::publish_status()
+void CameraNode::camera_on()
 {
-    std_msgs::msg::String msg;
-    msg.data = status_;
-    pub_status_->publish(std::move(msg));
-}
-
-void CameraNode::loop()
-{
-    while (rclcpp::ok()) {
-        if (status_ == "Idle") {
-            publish_status();
-            idle();
-        }
-        else if (status_ == "Running") {
-            running();
-        }
-        else {
-            status_ = "Idle";
-        }
+    if (status_ == "ON") {
+        publish_status("ON");
+        return;
     }
-}
 
-void CameraNode::idle()
-{
-    std_msgs::msg::String msg;
-    rclcpp::MessageInfo msg_info;
-    rclcpp::WaitSet wait_set({{{sub_cmd_}}}, {}, {});
-    RCLCPP_INFO(this->get_logger(), "In Idle mode...");
-    while (rclcpp::ok()) {
-        const auto wait_result = wait_set.wait(3s);
-        if (wait_result.kind() == rclcpp::WaitResultKind::Ready)
-        {
-            if (wait_result.get_wait_set().get_rcl_wait_set().subscriptions[0U])
-            {
-                if (sub_cmd_->take(msg, msg_info))
-                {
-                    if (msg.data != "Idle")
-                    {
-                        status_ = msg.data;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-}
-
-void CameraNode::running()
-{
     cam_.open(device_id_);
     if (!cam_.isOpened()) {
         RCLCPP_ERROR(this->get_logger(), "Failed to open camera %d!", device_id_);
-        status_ = "Idle";
+        publish_status("FAULT");
         return;
     }
+
     cam_.set(cv::CAP_PROP_FRAME_WIDTH, width_);
     cam_.set(cv::CAP_PROP_FRAME_HEIGHT, height_);
-    cv::Mat frame;
-    RCLCPP_INFO(this->get_logger(), "In Running mode...");
-    publish_status();
+    publish_status("ON");
+    timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(msec_),
+        std::bind(&CameraNode::timer_callback, this));
+}
 
-    std_msgs::msg::String msg;
-    rclcpp::MessageInfo msg_info;
-    while (rclcpp::ok())
+void CameraNode::camera_off()
+{
+    if (status_ == "OFF")
     {
-        if (sub_cmd_->take(msg, msg_info)) {
-            if (msg.data != "Running") {
-                status_ = msg.data;
-                break;
-            }
-        }
-        cam_ >> frame;
-        if (frame.empty())
-        {
-            RCLCPP_ERROR(this->get_logger(), "Frame is empty, breaking!");
-            status_ = "Idle";
-            break;
-        }
-        auto msg = std::make_unique<sensor_msgs::msg::Image>();
-        msg->header.stamp = this->get_clock()->now();
-        planb::convert_frame_to_message(frame, *msg);
-        pub_stream_->publish(std::move(msg));
+        publish_status("OFF");
+        return;
     }
+
+    timer_->cancel();
     cam_.release();
+    publish_status("OFF");
+}
+
+void CameraNode::publish_status(const std::string &status)
+{
+    std_msgs::msg::String msg;
+    msg.data = status;
+    status_ = status;
+    pub_status_->publish(std::move(msg));
+}
+
+void CameraNode::timer_callback()
+{
+    cv::Mat frame;
+    cam_ >> frame;
+    if (frame.empty())
+    {
+        RCLCPP_ERROR(this->get_logger(), "Frame is empty!");
+    }
+    auto msg = std::make_unique<sensor_msgs::msg::Image>();
+    msg->header.stamp = this->get_clock()->now();
+    planb::convert_frame_to_message(frame, *msg);
+    pub_stream_->publish(std::move(msg));
+}
+
+void CameraNode::cmd_callback(const planb_ros2::msg::Cmd &msg)
+{
+    if (msg.cmd == planb::CMD_TURN_ON)
+    {
+        camera_on();
+    }
+    else if (msg.cmd == planb::CMD_TURN_OFF)
+    {
+        camera_off();
+    }
 }

@@ -28,7 +28,13 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Aruco.msg"
+  "msg/ArucoMarker.msg"
   "msg/Box.msg"
+  "msg/Cmd.msg"
+  "msg/Operate.msg"
+  "msg/CoordInfo.msg"
+  "msg/BoundingBox.msg"
+  "srv/CameraInfo.srv"
   DEPENDENCIES
   std_msgs
 )
@@ -67,6 +73,9 @@ ament_target_dependencies(
 
 rclcpp_components_register_nodes(camera_node "planb::CameraNode")
 set(node_plugins "${node_plugins}camera::CameraNode;$<TARGET_FILE:camera_node>\n")
+
+rosidl_target_interfaces(camera_node
+${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #=============
 # Planb aruco node

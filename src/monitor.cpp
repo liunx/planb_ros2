@@ -4,8 +4,8 @@
 #include <opencv2/core/utility.hpp>
 #include <opencv2/highgui.hpp>
 #include "planb/common.hpp"
-#include "planb_ros2/msg/aruco.hpp"
-#include "planb_ros2/msg/box.hpp"
+#include "planb_ros2/msg/aruco_marker.hpp"
+#include "planb_ros2/msg/coord_info.hpp"
 
 using namespace std::chrono_literals;
 
@@ -13,17 +13,26 @@ int main(const int argc, const char **argv)
 {
     rclcpp::init(argc, argv);
     auto node = rclcpp::Node::make_shared("monitor");
-    auto do_nothing = [](sensor_msgs::msg::Image::UniquePtr) { assert(false); };
-    auto do_nothing2 = [](planb_ros2::msg::Aruco::UniquePtr) { assert(false); };
-    auto do_nothing3 = [](planb_ros2::msg::Box::UniquePtr) { assert(false); };
-    auto camera_stream = node->create_subscription<sensor_msgs::msg::Image>("/planb/camera/stream", 1, do_nothing);
-    auto aruco_markers = node->create_subscription<planb_ros2::msg::Aruco>("/planb/aruco/markers", 1, do_nothing2);
-    auto tracker_bbox = node->create_subscription<planb_ros2::msg::Box>("/planb/tracker/data", 1, do_nothing3);
+    auto camera_stream = node->create_subscription<sensor_msgs::msg::Image>(
+        "/planb/camera/stream",
+        1,
+        [](sensor_msgs::msg::Image::UniquePtr)
+        { assert(false); });
+    auto aruco_data = node->create_subscription<planb_ros2::msg::ArucoMarker>(
+        "/planb/aruco/data",
+        1,
+        [](planb_ros2::msg::ArucoMarker::UniquePtr)
+        { assert(false); });
+    auto tracker_data = node->create_subscription<planb_ros2::msg::CoordInfo>(
+        "/planb/tracker/data",
+        1,
+        [](planb_ros2::msg::CoordInfo::UniquePtr)
+        { assert(false); });
 
-    rclcpp::WaitSet wait_set({{{camera_stream}, {aruco_markers}, {tracker_bbox}}}, {}, {});
+    rclcpp::WaitSet wait_set({{{camera_stream}, {aruco_data}, {tracker_data}}}, {}, {});
     sensor_msgs::msg::Image image_msg;
-    planb_ros2::msg::Aruco markers_msg;
-    planb_ros2::msg::Box tracker_msg;
+    planb_ros2::msg::ArucoMarker aruco_msg;
+    planb_ros2::msg::CoordInfo tracker_msg;
     rclcpp::MessageInfo msg_info;
     cv::namedWindow("monitor", cv::WINDOW_NORMAL);
     bool flag_tracking = false;
@@ -32,10 +41,10 @@ int main(const int argc, const char **argv)
         // timeout
         if (wait_result.kind() != rclcpp::WaitResultKind::Ready)
             continue;
-        if (aruco_markers->take(markers_msg, msg_info))
+        if (aruco_data->take(aruco_msg, msg_info))
         {
         }
-        if (tracker_bbox->take(tracker_msg, msg_info))
+        if (tracker_data->take(tracker_msg, msg_info))
         {
             flag_tracking = true;
         }
@@ -46,16 +55,19 @@ int main(const int argc, const char **argv)
                 const_cast<unsigned char *>(image_msg.data.data()), image_msg.step);
             if (frame.empty())
                 continue;
-            if (markers_msg.data.size() > 0) {
-                for (auto marker : markers_msg.data) {
+            if (aruco_msg.bboxes.size() > 0) {
+                for (auto marker : aruco_msg.bboxes) {
                     auto bbox = cv::Rect2i(marker.x, marker.y, marker.width, marker.height);
                     cv::rectangle(frame, bbox, cv::Scalar(255, 0, 255), 2, 1);
                 }
                 // cleanup the data
-                markers_msg.data.clear();
+                aruco_msg.bboxes.clear();
             }
             if (flag_tracking) {
-                auto bbox = cv::Rect2i(tracker_msg.x, tracker_msg.y, tracker_msg.width, tracker_msg.height);
+                auto bbox = cv::Rect2i(tracker_msg.bbox.x,
+                                       tracker_msg.bbox.y,
+                                       tracker_msg.bbox.width,
+                                       tracker_msg.bbox.height);
                 cv::rectangle(frame, bbox, cv::Scalar(255, 255, 0), 2, 1);
                 flag_tracking = false;
             }

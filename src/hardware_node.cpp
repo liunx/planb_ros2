@@ -6,7 +6,7 @@ using std::placeholders::_1;
 
 HardwareNode::HardwareNode(const rclcpp::NodeOptions &options)
     : Node("hardware", options),
-      status_("Idle"), power_(1), angle_(6)
+      status_("OFF"), power_(1), angle_(6)
 {
     cmd_[0] = 0x06;
     cmd_[1] = 0x01;
@@ -16,10 +16,14 @@ HardwareNode::HardwareNode(const rclcpp::NodeOptions &options)
     baud_ = this->declare_parameter("baud", 9600);
 
     pub_status_  = this->create_publisher<std_msgs::msg::String>("/planb/hardware/status", 1);
-    sub_cmd_ = this->create_subscription<std_msgs::msg::String>(
+    sub_cmd_ = this->create_subscription<planb_ros2::msg::Cmd>(
         "/planb/hardware/cmd",
         1,
         std::bind(&HardwareNode::cmd_callback, this, _1));
+    sub_operate_ = this->create_subscription<planb_ros2::msg::Operate>(
+        "/planb/hardware/operate",
+        1,
+        std::bind(&HardwareNode::operate_callback, this, _1));
 }
 
 HardwareNode::~HardwareNode()
@@ -77,105 +81,64 @@ void HardwareNode::tx_data()
     write(serial_fd_, cmd_, sizeof(cmd_));
 }
 
-void HardwareNode::forward()
-{
-    if (cmd_[1] <= MAX_POWER_INDEX)
-    {
-        cmd_[1] += 1;
-        tx_data();
-    }
-}
-
-void HardwareNode::backward()
-{
-    if (cmd_[1] > MIN_POWER_INDEX)
-    {
-        cmd_[1] -= 1;
-        tx_data();
-    }
-}
-
-void HardwareNode::turn_left()
-{
-    if (cmd_[0] > MIN_ANGLE_INDEX)
-    {
-        cmd_[0] -= 1;
-        tx_data();
-    }
-}
-
-void HardwareNode::turn_right()
-{
-    if (cmd_[0] <= MAX_ANGLE_INDEX)
-    {
-        cmd_[0] += 1;
-        tx_data();
-    }
-}
-
-void HardwareNode::reset()
-{
-    if (angle_ != 6 || power_ != 1)
-    {
-        cmd_[0] = 6;
-        cmd_[1] = 1;
-        tx_data();
-        angle_ = 6;
-        power_ = 1;
-    }
-}
-
-void HardwareNode::stop()
-{
-    if (power_ != 1)
-    {
-        cmd_[1] = 1;
-        tx_data();
-        power_ = 1;
-    }
-}
-
-void HardwareNode::publish_status()
+void HardwareNode::publish_status(const std::string &status)
 {
     std_msgs::msg::String msg;
-    msg.data = status_;
+    msg.data = status;
+    status_ = status;
     pub_status_->publish(std::move(msg));
 }
 
-void HardwareNode::cmd_callback(const std_msgs::msg::String &msg)
+void HardwareNode::turn_on()
 {
-    if (msg.data == "Init") {
-        if (serial_init(dev_.c_str(), baud_) == 0) {
-            status_ = "Ready";
-        }
-        else {
-            status_ = "Fault";
-        }
-        publish_status();
-        return;
+    std::string status;
+    if (serial_init(dev_.c_str(), baud_) == 0)
+    {
+        status = "ON";
     }
+    else
+    {
+        status = "Fault";
+    }
+    publish_status(status);
+}
 
-    if (status_ != "Ready") {
-        publish_status();
-        return;
-    }
+void HardwareNode::turn_off()
+{
+    close(serial_fd_);
+    publish_status("OFF");
+}
 
-    if (msg.data == "Reset") {
-        reset();
+void HardwareNode::cmd_callback(const planb_ros2::msg::Cmd &msg)
+{
+    switch (msg.cmd)
+    {
+    case planb::CMD_TURN_ON:
+        turn_on();
+        break;
+    case planb::CMD_TURN_OFF:
+        turn_off();
+        break;
+    default:
+        break;
     }
-    else if (msg.data == "Stop") {
-        stop();
-    }
-    else if (msg.data == "Forward") {
-        forward();
-    }
-    else if (msg.data == "Backward") {
-        backward();
-    }
-    else if (msg.data == "Left") {
-        turn_left();
-    }
-    else if (msg.data == "Right") {
-        turn_right();
-    }
+}
+
+void HardwareNode::operate_callback(const planb_ros2::msg::Operate &msg)
+{
+    if (msg.steering <= MIN_ANGLE_INDEX)
+        cmd_[0] = MIN_ANGLE_INDEX;
+    else if (msg.steering > MAX_ANGLE_INDEX)
+        cmd_[0] = MAX_ANGLE_INDEX;
+    else
+        cmd_[0] = msg.steering;
+
+    if (msg.accel <= MIN_POWER_INDEX)
+        cmd_[0] = MIN_POWER_INDEX;
+    else if (msg.accel > MAX_POWER_INDEX)
+        cmd_[0] = MAX_POWER_INDEX;
+    else
+        cmd_[0] = msg.accel;
+
+    tx_data();
 }

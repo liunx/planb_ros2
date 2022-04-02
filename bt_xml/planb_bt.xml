@@ -3,71 +3,117 @@
     <!-- ////////// -->
     <BehaviorTree ID="BehaviorTree">
         <Sequence>
-            <Action ID="Wait"/>
-            <IfThenElse>
-                <Action ID="CheckCameraRunning"/>
+            <Delay delay_msec="1000">
                 <AlwaysSuccess/>
-                <Sequence>
-                    <Action ID="SetArucoIdle"/>
-                    <Action ID="ResetHardware"/>
-                    <Action ID="SetCameraRunning"/>
-                    <AlwaysFailure/>
-                </Sequence>
-            </IfThenElse>
-            <IfThenElse>
-                <Action ID="CheckHardwareReady"/>
+            </Delay>
+            <Action ID="GetCameraStatus" status="{camera_status}"/>
+            <Switch4 case_1="ON" case_2="OFF" case_3="FAULT" case_4="UNKNOWN" variable="{camera_status}">
                 <AlwaysSuccess/>
+                <ForceFailure>
+                    <Action ID="TurnCameraOn"/>
+                </ForceFailure>
+                <ForceFailure>
+                    <Sequence>
+                        <Action ID="TurnArucoOff"/>
+                        <Action ID="TurnTrackerOff"/>
+                        <Action ID="TurnHardwareOff"/>
+                    </Sequence>
+                </ForceFailure>
+                <ForceFailure>
+                    <Action ID="TurnCameraOn"/>
+                </ForceFailure>
+                <AlwaysFailure/>
+            </Switch4>
+            <Action ID="GetArucoStatus" status="{aruco_status}"/>
+            <Switch3 case_1="ON" case_2="OFF" case_3="UNKNOWN" variable="{aruco_status}">
+                <AlwaysSuccess/>
+                <ForceFailure>
+                    <Action ID="TurnArucoOn"/>
+                </ForceFailure>
+                <ForceFailure>
+                    <Action ID="TurnArucoOn"/>
+                </ForceFailure>
+                <AlwaysFailure/>
+            </Switch3>
+            <Action ID="GetTrackerStatus" status="{tracker_status}"/>
+            <Switch3 case_1="ON" case_2="OFF" case_3="UNKNOWN" variable="{tracker_status}">
+                <AlwaysSuccess/>
+                <ForceFailure>
+                    <Action ID="TurnTrackerOn"/>
+                </ForceFailure>
+                <ForceFailure>
+                    <Action ID="TurnTrackerOn"/>
+                </ForceFailure>
+                <AlwaysFailure/>
+            </Switch3>
+            <Action ID="TrackArucoID" id="1"/>
+            <KeepRunningUntilFailure>
                 <Sequence>
-                    <Action ID="InitHardware"/>
-                    <AlwaysFailure/>
-                </Sequence>
-            </IfThenElse>
-            <IfThenElse>
-                <Action ID="CheckArucoRunning"/>
-                <IfThenElse>
-                    <Action ID="CheckTrackerRunning"/>
-                    <Action ID="FollowTarget"/>
+                    <Delay delay_msec="3000">
+                        <AlwaysSuccess/>
+                    </Delay>
+                    <Action ID="GetCameraStatus" status="{cam_value1}"/>
+                    <Action ID="CheckEqual" value1="{cam_value1}" value2="ON"/>
                     <IfThenElse>
-                        <Action ID="DetectArucoMarkers"/>
-                        <Sequence>
-                            <Action ID="TrackingTarget"/>
-                            <Action ID="SetArucoIdle"/>
-                        </Sequence>
-                        <Action ID="StopFollow"/>
+                        <Action ID="GetArucoID" ids="{aruco_ids}"/>
+                        <IfThenElse>
+                            <Action ID="FindID" id="0" ids="{aruco_ids}"/>
+                            <Delay delay_msec="3000">
+                                <Sequence>
+                                    <Action ID="Info" text="Find id, exit!"/>
+                                    <AlwaysFailure/>
+                                </Sequence>
+                            </Delay>
+                            <AlwaysSuccess/>
+                        </IfThenElse>
+                        <AlwaysSuccess/>
                     </IfThenElse>
-                </IfThenElse>
-                <Action ID="SetArucoRunning"/>
-            </IfThenElse>
+                </Sequence>
+            </KeepRunningUntilFailure>
         </Sequence>
     </BehaviorTree>
     <!-- ////////// -->
-    <BehaviorTree ID="CheckHardware">
-        <Fallback>
-            <Action ID="CheckHardwareReady"/>
-            <Action ID="InitHardware"/>
-            <Delay delay_msec="500">
-                <AlwaysFailure/>
-            </Delay>
-        </Fallback>
-    </BehaviorTree>
-    <!-- ////////// -->
     <TreeNodesModel>
-        <Action ID="CheckArucoRunning"/>
-        <Action ID="CheckCameraRunning"/>
-        <SubTree ID="CheckHardware"/>
-        <Action ID="CheckHardwareReady"/>
-        <Action ID="CheckTrackerRunning"/>
-        <Action ID="DetectArucoMarkers"/>
-        <Action ID="FollowTarget"/>
-        <Action ID="InitHardware"/>
-        <Action ID="Monitor"/>
-        <Action ID="ResetHardware"/>
-        <Action ID="SetArucoIdle"/>
-        <Action ID="SetArucoRunning"/>
-        <Action ID="SetCameraRunning"/>
-        <Action ID="StopFollow"/>
-        <Action ID="TrackingTarget"/>
-        <Action ID="Wait"/>
+        <Action ID="CheckEqual">
+            <input_port name="value1"/>
+            <input_port name="value2"/>
+        </Action>
+        <Action ID="Error">
+            <input_port name="text"/>
+        </Action>
+        <Action ID="FindID">
+            <input_port name="id"/>
+            <input_port name="ids"/>
+        </Action>
+        <Action ID="GetArucoID">
+            <output_port name="ids"/>
+        </Action>
+        <Action ID="GetArucoStatus">
+            <output_port default="Unknown" name="status"/>
+        </Action>
+        <Action ID="GetCameraStatus">
+            <output_port name="status"/>
+        </Action>
+        <Action ID="GetTrackerStatus">
+            <output_port default="{tracker_status}" name="status"/>
+        </Action>
+        <Action ID="Info">
+            <input_port name="text"/>
+        </Action>
+        <Action ID="TrackArucoID">
+            <input_port default="0" name="id"/>
+        </Action>
+        <Action ID="TurnArucoOff"/>
+        <Action ID="TurnArucoOn"/>
+        <Action ID="TurnCameraOff"/>
+        <Action ID="TurnCameraOn"/>
+        <Action ID="TurnHardwareOff"/>
+        <Action ID="TurnHardwareOn"/>
+        <Action ID="TurnTrackerOff"/>
+        <Action ID="TurnTrackerOn"/>
+        <Action ID="Warn">
+            <input_port name="text"/>
+        </Action>
     </TreeNodesModel>
     <!-- ////////// -->
 </root>

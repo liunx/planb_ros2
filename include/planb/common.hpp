@@ -7,6 +7,17 @@
 #include "sensor_msgs/msg/image.hpp"
 
 namespace planb {
+    enum {
+        CMD_TURN_OFF = 0,
+        CMD_TURN_ON = 1,
+        CMD_TRACK_ARUCO = 2
+    };
+
+    enum {
+        TRACK_TYPE_UNKNOW = 0,
+        TRACK_TYPE_ARUCO = 2,
+    };
+
     std::string mat_type2encoding(int mat_type)
     {
         switch (mat_type)

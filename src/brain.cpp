@@ -8,34 +8,70 @@
 #define DEFAULT_BT_XML "./demo.xml"
 using namespace std::chrono_literals;
 
-void bind_actions(BT::BehaviorTreeFactory &factory)
+void bind_actions(BT::BehaviorTreeFactory &factory, rclcpp::Node::SharedPtr &node)
 {
-    static BehaviorTreeAction action = BehaviorTreeAction();
-    // camera
-    factory.registerSimpleAction("CheckCameraIdle", std::bind(&BehaviorTreeAction::check_camera_idle, &action));
-    factory.registerSimpleAction("SetCameraIdle", std::bind(&BehaviorTreeAction::set_camera_idle, &action));
-    factory.registerSimpleAction("CheckCameraRunning", std::bind(&BehaviorTreeAction::check_camera_running, &action));
-    factory.registerSimpleAction("SetCameraRunning", std::bind(&BehaviorTreeAction::set_camera_running, &action));
     // aruco
-    factory.registerSimpleAction("CheckArucoIdle", std::bind(&BehaviorTreeAction::check_aruco_idle, &action));
-    factory.registerSimpleAction("SetArucoIdle", std::bind(&BehaviorTreeAction::set_aruco_idle, &action));
-    factory.registerSimpleAction("CheckArucoRunning", std::bind(&BehaviorTreeAction::check_aruco_running, &action));
-    factory.registerSimpleAction("SetArucoRunning", std::bind(&BehaviorTreeAction::set_aruco_running, &action));
-    factory.registerSimpleAction("DetectArucoMarkers", std::bind(&BehaviorTreeAction::detect_aruco_markers, &action));
+    {
+        auto builder = [&node](const std::string &name,
+                               const BT::NodeConfiguration &config)
+        {
+            return std::make_unique<ArucoAction>(name, config, node);
+        };
+        factory.registerBuilder<ArucoAction>("GetArucoStatus", builder);
+        factory.registerBuilder<ArucoAction>("GetArucoID", builder);
+        factory.registerBuilder<ArucoAction>("TurnArucoOn", builder);
+        factory.registerBuilder<ArucoAction>("TurnArucoOff", builder);
+    }
     // tracker
-    factory.registerSimpleAction("CheckTrackerIdle", std::bind(&BehaviorTreeAction::check_tracker_idle, &action));
-    factory.registerSimpleAction("CheckTrackerRunning", std::bind(&BehaviorTreeAction::check_tracker_running, &action));
-    factory.registerSimpleAction("TrackingTarget", std::bind(&BehaviorTreeAction::tracking_target, &action));
-    // hardware
-    factory.registerSimpleAction("InitHardware", std::bind(&BehaviorTreeAction::init_hardware, &action));
-    factory.registerSimpleAction("ResetHardware", std::bind(&BehaviorTreeAction::reset_hardware, &action));
-    factory.registerSimpleAction("CheckHardwareReady", std::bind(&BehaviorTreeAction::check_hardware_ready, &action));
-    // others
-    factory.registerSimpleAction("Wait", std::bind(&BehaviorTreeAction::wait, &action));
-    factory.registerSimpleAction("FollowTarget", std::bind(&BehaviorTreeAction::follow_target, &action));
-    factory.registerSimpleAction("StopFollow", std::bind(&BehaviorTreeAction::stop_follow, &action));
-    // aruco
-    factory.registerNodeType<ArucoAction>("GetArucoStatus");
+    {
+        auto builder = [&node](const std::string &name,
+                               const BT::NodeConfiguration &config)
+        {
+            return std::make_unique<TrackerAction>(name, config, node);
+        };
+        factory.registerBuilder<TrackerAction>("GetTrackerStatus", builder);
+        factory.registerBuilder<TrackerAction>("TrackArucoID", builder);
+        factory.registerBuilder<TrackerAction>("TurnTrackerOn", builder);
+        factory.registerBuilder<TrackerAction>("TurnTrackerOff", builder);
+    }
+    // camera
+    {
+        auto builder = [&node](const std::string &name,
+                               const BT::NodeConfiguration &config)
+        {
+            return std::make_unique<CameraAction>(name, config, node);
+        };
+        factory.registerBuilder<CameraAction>("GetCameraStatus", builder);
+        factory.registerBuilder<CameraAction>("TurnCameraOn", builder);
+        factory.registerBuilder<CameraAction>("TurnCameraOff", builder);
+    }
+    // hardware 
+    {
+        auto builder = [&node](const std::string &name,
+                               const BT::NodeConfiguration &config)
+        {
+            return std::make_unique<HardwareAction>(name, config, node);
+        };
+        factory.registerBuilder<HardwareAction>("GetHardwareStatus", builder);
+        factory.registerBuilder<HardwareAction>("TurnHardwareOn", builder);
+        factory.registerBuilder<HardwareAction>("TurnHardwareOff", builder);
+    }
+    // wait
+    {
+        auto builder = [&node](const std::string &name,
+                               const BT::NodeConfiguration &config)
+        {
+            return std::make_unique<WaitAction>(name, config, node);
+        };
+        factory.registerBuilder<WaitAction>("Wait", builder);
+    }
+    // logic
+    factory.registerNodeType<LogicAction>("CheckEqual");
+    factory.registerNodeType<LogicAction>("FindID");
+    // logger
+    factory.registerNodeType<LogAction>("Info");
+    factory.registerNodeType<LogAction>("Warn");
+    factory.registerNodeType<LogAction>("Error");
 }
 
 int main(int argc, char **argv)
@@ -44,15 +80,15 @@ int main(int argc, char **argv)
     setvbuf(stdout, NULL, _IONBF, BUFSIZ);
     // Init ROS
     rclcpp::init(argc, argv);
-    auto nh = rclcpp::Node::make_shared("brain");
-    nh->declare_parameter("bt_xml", rclcpp::ParameterValue(std::string(DEFAULT_BT_XML)));
+    auto node = rclcpp::Node::make_shared("brain");
+    node->declare_parameter("bt_xml", rclcpp::ParameterValue(std::string(DEFAULT_BT_XML)));
     std::string bt_xml;
-    nh->get_parameter("bt_xml", bt_xml);
+    node->get_parameter("bt_xml", bt_xml);
     // Init behavior tree
     BT::BehaviorTreeFactory factory;
-    bind_actions(factory);
+    bind_actions(factory, node);
     auto tree = factory.createTreeFromFile(bt_xml);
-    BT::StdCoutLogger logger_cout(tree);
+    //BT::StdCoutLogger logger_cout(tree);
     BT::printTreeRecursively(tree.rootNode());
     while (rclcpp::ok())
     {

@@ -7,7 +7,8 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include <opencv2/aruco.hpp>
-#include "planb_ros2/msg/aruco.hpp"
+#include "planb_ros2/msg/aruco_marker.hpp"
+#include "planb_ros2/msg/cmd.hpp"
 
 class ArucoNode : public rclcpp::Node
 {
@@ -16,14 +17,16 @@ public:
     ~ArucoNode() override;
 
 private:
-    void update_status();
+    void stream_on();
+    void stream_off();
+    void publish_status(const std::string &status);
     void stream_callback(const sensor_msgs::msg::Image::UniquePtr msg);
-    void cmd_callback(const std_msgs::msg::String &msg);
+    void cmd_callback(const planb_ros2::msg::Cmd &msg);
     std::string status_;
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr sub_stream_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_status_;
-    rclcpp::Publisher<planb_ros2::msg::Aruco>::SharedPtr pub_markers_;
-    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_cmd_;
+    rclcpp::Publisher<planb_ros2::msg::ArucoMarker>::SharedPtr pub_data_;
+    rclcpp::Subscription<planb_ros2::msg::Cmd>::SharedPtr sub_cmd_;
     cv::Ptr<cv::aruco::Dictionary> dictionary_;
     cv::Ptr<cv::aruco::DetectorParameters> detector_params_;
 };
