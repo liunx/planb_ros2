@@ -243,6 +243,20 @@ rosidl_target_interfaces(monitor
 ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #=============
+# Planb motion_controller main
+#=============
+add_executable(motion_controller src/motion_controller.cpp) 
+ament_target_dependencies(
+  motion_controller
+  rclcpp
+  OpenCV
+  sensor_msgs
+  std_msgs
+)
+rosidl_target_interfaces(motion_controller
+${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+#=============
 # Export
 # Best practice, see https://discourse.ros.org/t/ament-best-practice-for-sharing-libraries/3602
 #=============
@@ -315,6 +329,7 @@ install(TARGETS
   hardware
   brain
   monitor
+  motion_controller
   DESTINATION lib/${PROJECT_NAME}
 )
 

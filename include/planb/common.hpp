@@ -18,6 +18,14 @@ namespace planb {
         TRACK_TYPE_ARUCO = 2,
     };
 
+    struct CoordInfo {
+        rclcpp::Time stamp;
+        uint32_t x;
+        uint32_t y;
+        uint32_t width;
+        uint32_t height;
+    };
+
     std::string mat_type2encoding(int mat_type)
     {
         switch (mat_type)
