@@ -134,11 +134,11 @@ void HardwareNode::operate_callback(const planb_ros2::msg::Operate &msg)
         cmd_[0] = msg.steering;
 
     if (msg.accel <= MIN_POWER_INDEX)
-        cmd_[0] = MIN_POWER_INDEX;
+        cmd_[1] = MIN_POWER_INDEX;
     else if (msg.accel > MAX_POWER_INDEX)
-        cmd_[0] = MAX_POWER_INDEX;
+        cmd_[1] = MAX_POWER_INDEX;
     else
-        cmd_[0] = msg.accel;
+        cmd_[1] = msg.accel;
 
     tx_data();
 }

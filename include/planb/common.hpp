@@ -20,8 +20,8 @@ namespace planb {
 
     struct CoordInfo {
         rclcpp::Time stamp;
-        uint32_t x;
-        uint32_t y;
+        float_t x;
+        float_t y;
         uint32_t width;
         uint32_t height;
     };

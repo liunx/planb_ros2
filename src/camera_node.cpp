@@ -10,8 +10,8 @@ CameraNode::CameraNode(const rclcpp::NodeOptions &options)
     : Node("camera", options),
       status_("OFF")
 {
-    width_ = this->declare_parameter("width", 640);
-    height_ = this->declare_parameter("height", 480);
+    width_ = this->declare_parameter("width", 320);
+    height_ = this->declare_parameter("height", 240);
     device_id_ = this->declare_parameter("device_id", 0);
     msec_ = this->declare_parameter("msec", 30);
 

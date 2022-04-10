@@ -25,6 +25,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Aruco.msg"
@@ -250,10 +251,26 @@ ament_target_dependencies(
   motion_controller
   rclcpp
   OpenCV
+  Eigen3
   sensor_msgs
   std_msgs
 )
 rosidl_target_interfaces(motion_controller
+${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+#=============
+# Planb tests main
+#=============
+add_executable(tests src/tests.cpp) 
+ament_target_dependencies(
+  tests
+  rclcpp
+  OpenCV
+  Eigen3
+  sensor_msgs
+  std_msgs
+)
+rosidl_target_interfaces(tests
 ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #=============
@@ -329,6 +346,7 @@ install(TARGETS
   hardware
   brain
   monitor
+  tests
   motion_controller
   DESTINATION lib/${PROJECT_NAME}
 )

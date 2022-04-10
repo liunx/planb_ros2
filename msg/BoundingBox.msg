@@ -2,7 +2,7 @@
 # Messages
 ########################################
 uint8   id
-uint32  x
-uint32  y
+float32  x
+float32  y
 uint32  width
 uint32  height

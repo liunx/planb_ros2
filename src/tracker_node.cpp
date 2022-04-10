@@ -1,6 +1,8 @@
 #include "planb/tracker_node.hpp"
 #include "planb/common.hpp"
 
+#define BBOX_PADDING 40
+
 using namespace std::chrono_literals;
 using std::placeholders::_1;
 
@@ -93,14 +95,23 @@ void TrackerNode::aruco_data_callback(const planb_ros2::msg::ArucoMarker &msg)
 {
     if (track_type_ != planb::CMD_TRACK_ARUCO)
         return;
-    if (flag_tracking_)
-        return;
     // find matched id
     for (auto marker : msg.bboxes)
     {
         if (marker.id == marker_id_)
         {
-            bbox_ = cv::Rect2d(marker.x, marker.y, marker.width, marker.height);
+            bbox_ = cv::Rect2d(marker.x - BBOX_PADDING/2,
+                               marker.y - BBOX_PADDING/2,
+                               marker.width + BBOX_PADDING,
+                               marker.height + BBOX_PADDING);
+            planb_ros2::msg::CoordInfo msg;
+            msg.header.stamp = this->get_clock()->now();
+            msg.type = planb::TRACK_TYPE_ARUCO;
+            msg.bbox.x = bbox_.x;
+            msg.bbox.y = bbox_.y;
+            msg.bbox.width = bbox_.width;
+            msg.bbox.height = bbox_.height;
+            pub_data_->publish(std::move(msg));
             flag_init_ = true;
             flag_tracking_ = true;
             break;
@@ -123,7 +134,6 @@ void TrackerNode::cmd_callback(const planb_ros2::msg::Cmd &msg)
     else if (msg.cmd == planb::CMD_TRACK_ARUCO)
     {
         track_type_ = planb::TRACK_TYPE_ARUCO;
-        RCLCPP_INFO(this->get_logger(), "tracking id: %d", msg.id);
         marker_id_ = msg.id;
     }
 }
