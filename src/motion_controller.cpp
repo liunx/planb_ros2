@@ -17,6 +17,7 @@ public:
         : Node("motion_controller", options),
           steering_(6),
           accel_(1),
+          stamp_(0.0),
           coords_({})
     {
         width_ = this->declare_parameter("width", 640);
@@ -50,16 +51,33 @@ private:
 
     void timer_callback()
     {
-        if (coords_.size() < 2)
+        uint8_t _accel = accel_;
+        uint8_t _steering = steering_;
+
+        if (coords_.size() < 2) {
+            if (stamp_.seconds() == 0.0f)
+            {
+                stamp_ = this->get_clock()->now();
+            }
+            else
+            {
+                auto now = this->get_clock()->now();
+                // Stop when lose target for some time
+                if ((now - stamp_).seconds() > 3.0f)
+                {
+                    stamp_ = now;
+                    _accel = 1;
+                    publish_operate(_steering, _accel);
+                }
+            }
             return;
+        }
+
         auto len = coords_.size();
         auto c1 = coords_[len-1];
         auto c1_x_center = c1.x + c1.width / 2;
         auto c1_y_center = c1.y + c1.height / 2;
         auto c2 = coords_[len-2];
-
-        uint8_t _accel = accel_;
-        uint8_t _steering = steering_;
 
         if (c1_y_center < height_ * 0.3f) { // Up
             // c1 <== c2
@@ -76,7 +94,7 @@ private:
             }
         }
         else {
-            _accel = 3;
+            _accel = 6;
         }
 
         if (c1_x_center < width_ * 0.2f) {
@@ -97,7 +115,7 @@ private:
             _steering = 6;
         }
         publish_operate(_steering, _accel);
-
+        stamp_ = this->get_clock()->now();
         coords_.clear();
     }
 
@@ -132,6 +150,7 @@ private:
     uint8_t steering_, accel_;
     uint32_t width_, height_;
     std::string status_;
+    rclcpp::Time stamp_;
     rclcpp::TimerBase::SharedPtr timer_;
     std::vector<planb::CoordInfo> coords_;
     rclcpp::Subscription<planb_ros2::msg::CoordInfo>::SharedPtr sub_coordinfo_;

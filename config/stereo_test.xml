@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="BehaviorTree">
+    <!-- ////////// -->
+    <BehaviorTree ID="BehaviorTree">
+        <Sequence>
+            <SubTree ID="StartupCamera"/>
+            <KeepRunningUntilFailure>
+                <Delay delay_msec="3000">
+                    <AlwaysSuccess/>
+                </Delay>
+            </KeepRunningUntilFailure>
+        </Sequence>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="Loop">
+        <KeepRunningUntilFailure>
+            <Sequence>
+                <Delay delay_msec="300">
+                    <AlwaysSuccess/>
+                </Delay>
+                <IfThenElse>
+                    <Action ID="GetArucoID" ids="{ids}"/>
+                    <Sequence>
+                        <IfThenElse>
+                            <Action ID="FindID" id="0" ids="{ids}"/>
+                            <AlwaysSuccess/>
+                        </IfThenElse>
+                        <IfThenElse>
+                            <Action ID="FindID" id="1" ids="{ids}"/>
+                            <AlwaysSuccess/>
+                        </IfThenElse>
+                    </Sequence>
+                    <AlwaysSuccess/>
+                </IfThenElse>
+            </Sequence>
+        </KeepRunningUntilFailure>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="StartupAruco">
+        <RetryUntilSuccesful num_attempts="3">
+            <Sequence>
+                <Action ID="TurnArucoOn"/>
+                <Delay delay_msec="500">
+                    <AlwaysSuccess/>
+                </Delay>
+                <Action ID="GetArucoStatus" status="{status}"/>
+                <Action ID="CheckEqual" value1="ON" value2="{status}"/>
+            </Sequence>
+        </RetryUntilSuccesful>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="StartupCamera">
+        <RetryUntilSuccesful num_attempts="3">
+            <Sequence>
+                <Action ID="TurnCameraOn"/>
+                <Delay delay_msec="3000">
+                    <AlwaysSuccess/>
+                </Delay>
+                <Action ID="GetCameraStatus" status="{status}"/>
+                <Action ID="CheckEqual" value1="ON" value2="{status}"/>
+            </Sequence>
+        </RetryUntilSuccesful>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="StartupHardware">
+        <RetryUntilSuccesful num_attempts="3">
+            <Sequence>
+                <Action ID="TurnHardwareOn"/>
+                <Delay delay_msec="300">
+                    <AlwaysSuccess/>
+                </Delay>
+                <Action ID="GetHardwareStatus" status="{status}"/>
+                <Action ID="CheckEqual" value1="ON" value2="{status}"/>
+            </Sequence>
+        </RetryUntilSuccesful>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <BehaviorTree ID="StartupTracker">
+        <RetryUntilSuccesful num_attempts="3">
+            <Sequence>
+                <Action ID="TurnTrackerOn"/>
+                <Delay delay_msec="300">
+                    <AlwaysSuccess/>
+                </Delay>
+                <Action ID="GetTrackerStatus" status="{status}"/>
+                <Action ID="CheckEqual" value1="ON" value2="{status}"/>
+            </Sequence>
+        </RetryUntilSuccesful>
+    </BehaviorTree>
+    <!-- ////////// -->
+    <TreeNodesModel>
+        <Action ID="CheckEqual">
+            <input_port name="value1"/>
+            <input_port name="value2"/>
+        </Action>
+        <Action ID="Error">
+            <input_port name="text"/>
+        </Action>
+        <Action ID="FindID">
+            <input_port name="id"/>
+            <input_port name="ids"/>
+        </Action>
+        <Action ID="GetArucoID">
+            <output_port name="ids"/>
+        </Action>
+        <Action ID="GetArucoStatus">
+            <output_port default="{status}" name="status"/>
+        </Action>
+        <Action ID="GetCameraStatus">
+            <output_port default="{status}" name="status"/>
+        </Action>
+        <Action ID="GetHardwareStatus">
+            <input_port default="{status}" name="status"/>
+        </Action>
+        <Action ID="GetTrackerStatus">
+            <output_port default="{status}" name="status"/>
+        </Action>
+        <Action ID="Info">
+            <input_port name="text"/>
+        </Action>
+        <SubTree ID="Loop"/>
+        <SubTree ID="StartupAruco"/>
+        <SubTree ID="StartupCamera"/>
+        <SubTree ID="StartupHardware"/>
+        <SubTree ID="StartupTracker"/>
+        <Action ID="TrackArucoID">
+            <input_port default="0" name="id"/>
+        </Action>
+        <Action ID="TurnArucoOff"/>
+        <Action ID="TurnArucoOn"/>
+        <Action ID="TurnCameraOff"/>
+        <Action ID="TurnCameraOn"/>
+        <Action ID="TurnHardwareOff"/>
+        <Action ID="TurnHardwareOn"/>
+        <Action ID="TurnTrackerOff"/>
+        <Action ID="TurnTrackerOn"/>
+        <Action ID="Warn">
+            <input_port name="text"/>
+        </Action>
+    </TreeNodesModel>
+    <!-- ////////// -->
+</root>
+

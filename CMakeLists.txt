@@ -259,6 +259,20 @@ rosidl_target_interfaces(motion_controller
 ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #=============
+# Planb stereoCV main
+#=============
+add_executable(stereoCV src/stereo_cv.cpp) 
+ament_target_dependencies(
+  stereoCV
+  rclcpp
+  OpenCV
+  sensor_msgs
+  std_msgs
+)
+rosidl_target_interfaces(stereoCV
+${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+#=============
 # Planb tests main
 #=============
 add_executable(tests src/tests.cpp) 
@@ -348,12 +362,13 @@ install(TARGETS
   monitor
   tests
   motion_controller
+  stereoCV
   DESTINATION lib/${PROJECT_NAME}
 )
 
 # Install various directories
 install(
-  DIRECTORY launch
+  DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME}
 )
 

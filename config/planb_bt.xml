@@ -25,12 +25,10 @@
                     <Sequence>
                         <IfThenElse>
                             <Action ID="FindID" id="0" ids="{ids}"/>
-                            <Action ID="Info" text="find id 0"/>
                             <AlwaysSuccess/>
                         </IfThenElse>
                         <IfThenElse>
                             <Action ID="FindID" id="1" ids="{ids}"/>
-                            <Action ID="Info" text="find id 1"/>
                             <AlwaysSuccess/>
                         </IfThenElse>
                     </Sequence>
