@@ -6,7 +6,7 @@ using std::placeholders::_1;
 
 HardwareNode::HardwareNode(const rclcpp::NodeOptions &options)
     : Node("hardware", options),
-      status_("OFF"), power_(1), angle_(6)
+      status_("OFF"), speed_(0), angle_(0)
 {
     cmd_[0] = 0x06;
     cmd_[1] = 0x01;
@@ -24,6 +24,10 @@ HardwareNode::HardwareNode(const rclcpp::NodeOptions &options)
         "/planb/hardware/operate",
         1,
         std::bind(&HardwareNode::operate_callback, this, _1));
+    sub_twist_ = this->create_subscription<geometry_msgs::msg::Twist>(
+        "/cmd_vel",
+        1,
+        std::bind(&HardwareNode::twist_callback, this, _1));
 }
 
 HardwareNode::~HardwareNode()
@@ -124,6 +128,43 @@ void HardwareNode::cmd_callback(const planb_ros2::msg::Cmd &msg)
     }
 }
 
+void HardwareNode::twist_callback(const geometry_msgs::msg::Twist &msg)
+{
+    int speed, angle;
+    speed = msg.linear.x;
+    angle = msg.angular.z;
+    if (speed > 0) //forward
+    {
+        cmd_[1] = speed > 7 ? 7 : speed;
+    }
+    else if (speed < 0) // backward
+    {
+        cmd_[1] = 0;
+    }
+    else // stop
+    {
+        cmd_[1] = 1;
+    }
+
+    if (angle > 0) // left
+    {
+        cmd_[0] = angle >= 6 ? 0 : 6 - angle;
+    }
+    else if (angle < 0) // right
+    {
+        cmd_[0] = abs(angle) >= 6 ? 12 : 6 - angle;
+    }
+    else // middle
+    {
+        cmd_[0] = 6;
+    }
+
+    RCLCPP_INFO(this->get_logger(), "speed index: %d, angle index: %d", cmd_[1], cmd_[0]);
+
+    tx_data();
+
+}
+
 void HardwareNode::operate_callback(const planb_ros2::msg::Operate &msg)
 {
     if (msg.steering <= MIN_ANGLE_INDEX)
@@ -133,10 +174,10 @@ void HardwareNode::operate_callback(const planb_ros2::msg::Operate &msg)
     else
         cmd_[0] = msg.steering;
 
-    if (msg.accel <= MIN_POWER_INDEX)
-        cmd_[1] = MIN_POWER_INDEX;
-    else if (msg.accel > MAX_POWER_INDEX)
-        cmd_[1] = MAX_POWER_INDEX;
+    if (msg.accel <= MIN_SPEED_INDEX)
+        cmd_[1] = MIN_SPEED_INDEX;
+    else if (msg.accel > MAX_SPEED_INDEX)
+        cmd_[1] = MAX_SPEED_INDEX;
     else
         cmd_[1] = msg.accel;
 

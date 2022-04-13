@@ -4,6 +4,7 @@
     <BehaviorTree ID="BehaviorTree">
         <Sequence>
             <SubTree ID="StartupCamera"/>
+            <SubTree ID="StartupHardware"/>
             <KeepRunningUntilFailure>
                 <Delay delay_msec="3000">
                     <AlwaysSuccess/>

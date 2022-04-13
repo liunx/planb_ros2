@@ -212,6 +212,7 @@ ament_target_dependencies(
   OpenCV
   sensor_msgs
   std_msgs
+  geometry_msgs
 )
 
 #=============
