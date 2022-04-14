@@ -28,9 +28,7 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(Eigen3 REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/Aruco.msg"
   "msg/ArucoMarker.msg"
-  "msg/Box.msg"
   "msg/Cmd.msg"
   "msg/Operate.msg"
   "msg/CoordInfo.msg"
