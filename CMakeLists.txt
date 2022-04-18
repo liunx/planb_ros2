@@ -287,6 +287,61 @@ rosidl_target_interfaces(calib_tool
 ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #=============
+# Planb stereo_calib main
+#=============
+add_executable(stereo_calib src/stereo_calib.cpp)
+ament_target_dependencies(
+  stereo_calib
+  rclcpp
+  OpenCV
+  Eigen3
+  sensor_msgs
+  std_msgs
+)
+rosidl_target_interfaces(stereo_calib
+${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+#=============
+# Planb checkboard_capture main
+#=============
+add_executable(checkboard_capture src/checkboard_capture.cpp) 
+ament_target_dependencies(
+  checkboard_capture
+  rclcpp
+  OpenCV
+  Eigen3
+  sensor_msgs
+  std_msgs
+)
+rosidl_target_interfaces(checkboard_capture
+${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+#=============
+# Planb movie3d main
+#=============
+add_executable(movie3d src/movie3d.cpp) 
+ament_target_dependencies(
+  movie3d
+  rclcpp
+  OpenCV
+  Eigen3
+  sensor_msgs
+  std_msgs
+)
+rosidl_target_interfaces(movie3d
+${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+#=============
+# Planb calibrate main
+#=============
+add_executable(calibrate src/calibrate.cpp) 
+ament_target_dependencies(
+  calibrate
+  rclcpp
+  OpenCV
+)
+
+#=============
 # Planb tests main
 #=============
 add_executable(tests src/tests.cpp) 
@@ -378,6 +433,10 @@ install(TARGETS
   motion_controller
   stereoCV
   calib_tool
+  stereo_calib
+  checkboard_capture
+  calibrate
+  movie3d
   DESTINATION lib/${PROJECT_NAME}
 )
 
