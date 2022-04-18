@@ -272,6 +272,21 @@ rosidl_target_interfaces(stereoCV
 ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #=============
+# Planb calib_tool main
+#=============
+add_executable(calib_tool src/calib_tool.cpp)
+ament_target_dependencies(
+  calib_tool
+  rclcpp
+  OpenCV
+  Eigen3
+  sensor_msgs
+  std_msgs
+)
+rosidl_target_interfaces(calib_tool
+${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+#=============
 # Planb tests main
 #=============
 add_executable(tests src/tests.cpp) 
@@ -362,6 +377,7 @@ install(TARGETS
   tests
   motion_controller
   stereoCV
+  calib_tool
   DESTINATION lib/${PROJECT_NAME}
 )
 

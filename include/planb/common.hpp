@@ -8,6 +8,19 @@
 
 namespace planb {
     enum {
+        RET_SUCCESS = 0,
+        RET_ERROR = 1
+    };
+
+    enum {
+        KEY_BS = 0x08,
+        KEY_ESC = 0x1B,
+        KEY_CR = 0x0D,
+        KEY_SPACE = 0x20,
+        KEY_DEL = 0x7F
+    };
+
+    enum {
         CMD_TURN_OFF = 0,
         CMD_TURN_ON = 1,
         CMD_TRACK_ARUCO = 2
