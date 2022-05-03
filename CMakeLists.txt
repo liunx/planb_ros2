@@ -23,6 +23,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(planb_interfaces REQUIRED)
 find_package(behaviortree_cpp_v3 REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -152,6 +153,7 @@ ament_target_dependencies(
   rclcpp
   sensor_msgs
   std_msgs
+  planb_interfaces
 )
 
 rclcpp_components_register_nodes(hardware_node "planb::HardwareNode")
@@ -203,7 +205,7 @@ ament_target_dependencies(
 # Planb hardware main
 #=============
 add_executable(hardware src/hardware.cpp)
-target_link_libraries(hardware hardware_node)
+target_link_libraries(hardware hardware_node "libmraa.so")
 ament_target_dependencies(
   hardware
   rclcpp
@@ -355,6 +357,8 @@ ament_target_dependencies(
 )
 rosidl_target_interfaces(tests
 ${PROJECT_NAME} "rosidl_typesupport_cpp")
+# thirdpart library
+target_link_libraries(tests "libmraa.so")
 
 #=============
 # Export

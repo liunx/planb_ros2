@@ -2,8 +2,8 @@
   <node pkg="planb_ros2" exec="stereo_calib" output="screen">
     <param name="width" value="640"/>
     <param name="height" value="240"/>
-    <param name="params" value="$(find-pkg-share planb_ros2)/config/depth_estimation_params.xml"/>
-    <param name="maps" value="$(find-pkg-share planb_ros2)/config/stereo_rectify_maps.xml"/>
+    <param name="params" value="./data/depth_estimation_params.xml"/>
+    <param name="maps" value="./data/stereo_rectify_maps.xml"/>
   </node>
   <node pkg="planb_ros2" exec="brain" output="screen">
     <param name="bt_xml" value="$(find-pkg-share planb_ros2)/config/stereo_test.xml"/>

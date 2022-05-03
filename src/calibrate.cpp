@@ -157,7 +157,7 @@ int main()
                       Emat,
                       Fmat,
                       flag,
-                      cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 100, 1e-5));
+                      cv::TermCriteria(cv::TermCriteria::MAX_ITER + cv::TermCriteria::EPS, 30, 1e-6));
 
   cv::Mat rect_l, rect_r, proj_mat_l, proj_mat_r, Q;
 

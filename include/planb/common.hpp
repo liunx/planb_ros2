@@ -6,6 +6,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
+#define PI 3.141592654
+
 namespace planb {
     enum {
         RET_SUCCESS = 0,
