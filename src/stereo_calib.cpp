@@ -5,12 +5,15 @@
 #include <opencv2/highgui.hpp>
 #include <eigen3/Eigen/Dense>
 #include "planb/common.hpp"
-#include <list>
 
 #define WIN_CANVAS "canvas output"
 #define WIN_DISPARITY "disparity"
 
 using namespace std::chrono_literals;
+
+int max_dist = 90; // max distance to keep the target object (in cm)
+int min_dist = 30; // Minimum distance the stereo setup can measure (in cm)
+int sample_delta = 10; // Distance between two sampling points (in cm)
 
 // initialize values for StereoSGBM parameters
 int numDisparities = 8;
@@ -155,9 +158,17 @@ public:
 
                 auto key = cv::waitKey(1);
                 if (key == planb::KEY_ESC)
+                {
+                    RCLCPP_INFO(this->get_logger(), "Reseting...");
                     points_.clear();
+                    Z_ = max_dist;
+                    z_vec_.clear();
+                    coeff_vec_.clear();
+                }
                 else if (key == 's')
                     save_params();
+                else if (key == 'd')
+                    calculate_depth();
 
                 for (auto point : points_)
                 {
@@ -175,9 +186,16 @@ public:
     void on_mouse_event(int x, int y)
     {
         float depth_val = disparity_.at<float>(y, x);
-        if (depth_val > 0)
+        if (depth_val > 0.0)
         {
             RCLCPP_INFO(this->get_logger(), "Depth: %.2f", depth_val);
+            if (Z_ >= min_dist)
+            {
+                RCLCPP_INFO(this->get_logger(), "Z = %f", Z_);
+                z_vec_.push_back(Z_);
+                coeff_vec_.push_back(cv::Point2f(1.0f / (float)depth_val, 1.0f));
+                Z_ = Z_ - sample_delta;
+            }
         }
         points_.push_back(cv::Point2i(x, y));
     }
@@ -203,12 +221,31 @@ public:
 
     void calculate_depth()
     {
+        // solving for M in the following equation
+        //||    depth = M * (1/disparity)   ||
+        // for N data points coeff is Nx2 matrix with values
+        // 1/disparity, 1
+        // and depth is Nx1 matrix with depth values
+        cv::Mat Z_mat(z_vec_.size(), 1, CV_32F, z_vec_.data());
+        cv::Mat coeff(z_vec_.size(), 2, CV_32F, coeff_vec_.data());
+
+        cv::Mat sol(2, 1, CV_32F);
+
+        // Solving for M using least square fitting with QR decomposition method
+        cv::solve(coeff, Z_mat, sol, cv::DECOMP_QR);
+
+        M = sol.at<float>(0, 0);
+        RCLCPP_INFO(this->get_logger(), "Calculate depth: M=%f", M);
     }
 
 public:
     cv::Ptr<cv::StereoBM> stereo_;
 
 private:
+    // depth calibrate
+    std::vector<float> z_vec_;
+    std::vector<cv::Point2f> coeff_vec_;
+    float Z_ = max_dist;
     std::string params_file_;
     uint32_t width_, height_;
     cv::Rect rect_L_, rect_R_;

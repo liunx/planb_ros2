@@ -1,17 +1,12 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "sensor_msgs/msg/image.hpp"
+#include "planb_interfaces/msg/obstacle.hpp"
 #include "planb/common.hpp"
 #include "planb_ros2/msg/cmd.hpp"
 
-
 using namespace std::chrono_literals;
 using std::placeholders::_1;
-
-// These parameters can vary according to the setup
-float max_depth = 400.0;   // maximum distance the setup can measure (in cm)
-float min_depth = 50.0;    // minimum distance the setup can measure (in cm)
-float depth_thresh = 45.0; // Threshold for SAFE distance (in cm)
 
 // initialize values for StereoSGBM parameters
 int numDisparities = 8;
@@ -36,6 +31,8 @@ public:
     {
         uint32_t width = this->declare_parameter("width", 640);
         uint32_t height = this->declare_parameter("height", 240);
+        depth_thresh_ = this->declare_parameter("depth_thresh", 60);
+        mode_ = this->declare_parameter("mode", "gui");
         std::string params = this->declare_parameter("params", "./config/depth_estimation_params.xml");
         std::string maps = this->declare_parameter("maps", "./config/stereo_rectify_maps.xml");
 
@@ -73,8 +70,6 @@ public:
         stereo_->setDisp12MaxDiff(disp12MaxDiff);
         stereo_->setMinDisparity(minDisparity);
 
-        // Initialize variables to store the maps for stereo rectification
-
         // Reading the mapping values for stereo image rectification
         cv::FileStorage cv_file2 = cv::FileStorage(maps, cv::FileStorage::READ);
         cv_file2["Left_Stereo_Map_x"] >> left_stereo_map1_;
@@ -89,6 +84,8 @@ public:
             "/planb/stereoCV/cmd",
             1,
             std::bind(&StereoCV::cmd_callback, this, _1));
+
+        pub_obstacle_ = this->create_publisher<planb_interfaces::msg::Obstacle>("/planb/stereoCV/obstacle", 1);
 
         stream_on();
     }
@@ -120,6 +117,17 @@ private:
         sub_stream_ = this->create_subscription<sensor_msgs::msg::Image>("/planb/camera/null", 10, do_nothing);
     }
 
+    void publish_obstacle(cv::Rect box, float depth)
+    {
+        planb_interfaces::msg::Obstacle msg;
+        msg.depth = depth;
+        msg.box.x = box.x;
+        msg.box.y = box.y;
+        msg.box.width = box.width;
+        msg.box.height = box.height;
+        pub_obstacle_->publish(std::move(msg));
+    }
+
     // function to sort contours from largest to smallest
     static bool compare_contour_areas(std::vector<cv::Point> contour1, std::vector<cv::Point> contour2)
     {
@@ -133,7 +141,7 @@ private:
         cv::Mat mask, mean, stddev, mask2;
 
         // Mask to segment regions with depth less than safe distance
-        cv::inRange(depth_map, 10, depth_thresh, mask);
+        cv::inRange(depth_map, 10, depth_thresh_, mask);
         double s = (cv::sum(mask)[0]) / 255.0;
         double img_area = double(mask.rows * mask.cols);
 
@@ -164,31 +172,38 @@ private:
                 // finding average depth of region represented by the largest contour
                 mask2 = mask * 0;
                 cv::drawContours(mask2, contours, 0, (255), -1);
-                cv::drawContours(disparity, contours, 0, (255), -1);
-                cv::rectangle(output_canvas, box, cv::Scalar(255, 0, 255), 2, 1);
-
                 // Calculating the average depth of the object closer than the safe distance
                 cv::meanStdDev(depth_map, mean, stddev, mask2);
-
-#if 1
-                // Printing the warning text with object distance
-                char text[10];
-                std::sprintf(text, "%.2f cm", mean.at<double>(0, 0));
-                cv::putText(output_canvas, "WARNING!", cv::Point2f(box.x + 5, box.y - 40), 1, 2, cv::Scalar(0, 0, 255), 2, 2);
-                cv::putText(output_canvas, "Object at", cv::Point2f(box.x + 5, box.y), 1, 2, cv::Scalar(0, 0, 255), 2, 2);
-                cv::putText(output_canvas, text, cv::Point2f(box.x + 5, box.y + 40), 1, 2, cv::Scalar(0, 0, 255), 2, 2);
-#endif
+                publish_obstacle(box, mean.at<double>(0, 0));
+                if (mode_ == "gui")
+                {
+                    cv::drawContours(disparity, contours, 0, (255), -1);
+                    cv::rectangle(output_canvas, box, cv::Scalar(255, 0, 255), 2, 1);
+                    // Printing the warning text with object distance
+                    char text[10];
+                    std::sprintf(text, "%.2f cm", mean.at<double>(0, 0));
+                    cv::putText(output_canvas, "WARNING!", cv::Point2f(box.x + 5, box.y - 40), 1, 2, cv::Scalar(0, 0, 255), 2, 2);
+                    cv::putText(output_canvas, "Object at", cv::Point2f(box.x + 5, box.y), 1, 2, cv::Scalar(0, 0, 255), 2, 2);
+                    cv::putText(output_canvas, text, cv::Point2f(box.x + 5, box.y + 40), 1, 2, cv::Scalar(0, 0, 255), 2, 2);
+                }
             }
         }
         else
         {
-            // Printing SAFE if no obstacle is closer than the safe distance
-            cv::putText(output_canvas, "SAFE!", cv::Point2f(200, 200), 1, 2, cv::Scalar(0, 255, 0), 2, 2);
+            if (mode_ == "gui")
+            {
+                // Printing SAFE if no obstacle is closer than the safe distance
+                cv::putText(output_canvas, "SAFE!", cv::Point2f(200, 200), 1, 2, cv::Scalar(0, 255, 0), 2, 2);
+            }
         }
 
-        // Displaying the output of the obstacle avoidance system
-        cv::imshow("disparity", disparity);
-        cv::imshow("output_canvas", output_canvas);
+        if (mode_ == "gui")
+        {
+            // Displaying the output of the obstacle avoidance system
+            cv::imshow("disparity", disparity);
+            cv::imshow("output_canvas", output_canvas);
+            cv::waitKey(1);
+        }
     }
 
     void stream_callback(const sensor_msgs::msg::Image::UniquePtr msg)
@@ -242,8 +257,6 @@ private:
         depth_map = (float)M / disparity;
 
         obstacle_avoid(depth_map, disparity, output_canvas);
-
-        cv::waitKey(1);
     }
 
     void cmd_callback(const planb_ros2::msg::Cmd &msg)
@@ -261,12 +274,15 @@ private:
     }
 
     std::string status_;
+    uint32_t depth_thresh_;
+    std::string mode_;
     cv::Rect rect_L_, rect_R_;
     cv::Mat left_stereo_map1_, left_stereo_map2_;
     cv::Mat right_stereo_map1_, right_stereo_map2_;
     cv::Ptr<cv::StereoBM> stereo_;
     rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr sub_stream_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr pub_status_;
+    rclcpp::Publisher<planb_interfaces::msg::Obstacle>::SharedPtr pub_obstacle_;
     rclcpp::Subscription<planb_ros2::msg::Cmd>::SharedPtr sub_cmd_;
 };
 

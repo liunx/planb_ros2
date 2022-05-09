@@ -269,6 +269,7 @@ ament_target_dependencies(
   OpenCV
   sensor_msgs
   std_msgs
+  planb_interfaces
 )
 rosidl_target_interfaces(stereoCV
 ${PROJECT_NAME} "rosidl_typesupport_cpp")
