@@ -1,0 +1,20 @@
+<launch>
+  <node pkg="planb_hw" exec="camera" output="screen">
+    <param name="width" value="640"/>
+    <param name="height" value="480"/>
+    <param name="device_id" value="0"/>
+  </node>
+  <node pkg="planb_hw" exec="hardware" output="screen"/>
+  <node pkg="planb_cv" exec="tracker" output="screen"/>
+  <node pkg="planb_monitor" exec="monitor" output="screen"/>
+  <node pkg="planb_core" exec="motion_controller" output="screen">
+    <param name="width" value="640"/>
+    <param name="height" value="480"/>
+  </node>
+  <node pkg="planb_cv" exec="aruco" output="screen">
+    <param name="dict_id" value="0"/>
+  </node>
+  <node pkg="planb_core" exec="brain" output="screen">
+    <param name="bt_xml" value="$(find-pkg-share planb_core)/config/planb_bt.xml"/>
+  </node>
+</launch>

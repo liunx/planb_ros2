@@ -1,0 +1,10 @@
+<launch>
+  <node pkg="planb_cv" exec="checkboard_capture" output="screen">
+    <param name="width" value="640"/>
+    <param name="height" value="240"/>
+    <param name="output_path" value="./data"/>
+  </node>
+  <node pkg="planb_core" exec="brain" output="screen">
+    <param name="bt_xml" value="$(find-pkg-share planb_core)/config/stereo_test.xml"/>
+  </node>
+</launch>

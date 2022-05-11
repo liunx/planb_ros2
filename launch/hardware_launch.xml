@@ -1,6 +1,0 @@
-<launch>
-  <node pkg="planb_ros2" exec="hardware" output="screen">
-    <param name="baud" value="115200"/>
-    <param name="dev_path" value="/dev/ttyUSB0"/>
-  </node>
-</launch>
