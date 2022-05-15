@@ -25,6 +25,7 @@ find_package(Eigen3 REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(planb_interfaces REQUIRED)
+find_package(planb_common REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 # Package includes not needed for CMake >= 2.8.11
@@ -44,6 +45,7 @@ ament_target_dependencies(
   Eigen3
   sensor_msgs
   std_msgs
+  planb_common
 )
 target_link_libraries(tests "libmraa.so")
 

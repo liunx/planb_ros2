@@ -120,6 +120,7 @@ private:
     void publish_obstacle(cv::Rect box, float depth)
     {
         planb_interfaces::msg::Obstacle msg;
+        msg.state = planb_interfaces::msg::Obstacle::WARN;
         msg.depth = depth;
         msg.box.x = box.x;
         msg.box.y = box.y;
@@ -190,6 +191,10 @@ private:
         }
         else
         {
+            planb_interfaces::msg::Obstacle msg;
+            msg.state = planb_interfaces::msg::Obstacle::SAFE;
+            pub_obstacle_->publish(std::move(msg));
+
             if (mode_ == "gui")
             {
                 // Printing SAFE if no obstacle is closer than the safe distance

@@ -50,6 +50,8 @@ private slots:
 
     void on_arckermanMode_toggled(bool checked);
 
+    void on_close();
+
 signals:
     void signal_robot(Robot robot);
 

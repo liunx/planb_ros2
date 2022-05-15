@@ -17,6 +17,7 @@ void MyThread::run()
     {
         std::this_thread::sleep_for(1s);
     }
+    emit signal_close();
 }
 
 void MyThread::slot_robot(Robot robot)

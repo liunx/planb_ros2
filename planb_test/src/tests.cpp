@@ -3,6 +3,7 @@
 #include <cmath>
 #include <eigen3/Eigen/Dense>
 #include <rclcpp/rclcpp.hpp>
+#include <planb_common/common.hpp>
 #include <mraa.hpp>
 
 using namespace std::chrono_literals;
@@ -109,10 +110,17 @@ void demo04()
     }
 }
 
+void demo05()
+{
+    int val = 100;
+    val = planb::clamp(val, 0, 90);
+    std::cout << val << std::endl;
+}
+
 int main(const int argc, const char **argv)
 {
     rclcpp::init(argc, argv);
-    demo04();
+    demo05();
     rclcpp::shutdown();
     return 0;
 }

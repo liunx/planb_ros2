@@ -82,7 +82,7 @@ void Widget::on_normalMode_toggled(bool checked)
 {
     if (checked)
     {
-        robot_.mode = 0;
+        robot_.mode = NORMAL_MODE;
         recover_servo();
         recover_motor();
         emit signal_robot(robot_);
@@ -97,7 +97,7 @@ void Widget::on_circleMode_toggled(bool checked)
 {
     if (checked)
     {
-        robot_.mode = 1;
+        robot_.mode = CIRCLE_MODE;
         ui->servoDial->setDisabled(true);
         disable_servo();
         disable_motor();
@@ -113,7 +113,7 @@ void Widget::on_arckermanMode_toggled(bool checked)
 {
     if (checked)
     {
-        robot_.mode = 2;
+        robot_.mode = ARCKERMAN_MODE;
         disable_servo();
         disable_motor();
         emit signal_robot(robot_);
@@ -198,23 +198,33 @@ void Widget::keyPressEvent(QKeyEvent *event)
         ui->motorDial->setValue(servo_dial_);
         ui->servoDial->setValue(motor_dial_);
     }
+    else if (event->key() == Qt::Key_Q)
+    {
+        motor_dial_ = 0;
+        ui->motorDial->setValue(servo_dial_);
+    }
+    else if (event->key() == Qt::Key_E)
+    {
+        servo_dial_ = 0;
+        ui->servoDial->setValue(motor_dial_);
+    }
     else if (event->key() == Qt::Key_A)
     {
-        servo_dial_ -= 1;
+        servo_dial_ -= 5;
         if (servo_dial_ < -90)
             servo_dial_ = -90;
         ui->servoDial->setValue(servo_dial_);
     }
     else if (event->key() == Qt::Key_D)
     {
-        servo_dial_ += 1;
+        servo_dial_ += 5;
         if (servo_dial_ > 90)
             servo_dial_ = 90;
         ui->servoDial->setValue(servo_dial_);
     }
     else if (event->key() == Qt::Key_W)
     {
-        motor_dial_ += 1;
+        motor_dial_ += 5;
         if (motor_dial_ > 0 && motor_dial_ < MIN_ACCEL)
             motor_dial_ = MIN_ACCEL;
         else if (motor_dial_ < 0 && motor_dial_ > -MIN_ACCEL)
@@ -225,7 +235,7 @@ void Widget::keyPressEvent(QKeyEvent *event)
     }
     else if (event->key() == Qt::Key_S)
     {
-        motor_dial_ -= 1;
+        motor_dial_ -= 5;
         if (motor_dial_ > -MIN_ACCEL && motor_dial_ < 0)
             motor_dial_ = -MIN_ACCEL;
         else if (motor_dial_ < MIN_ACCEL && motor_dial_ > 0)
@@ -234,5 +244,9 @@ void Widget::keyPressEvent(QKeyEvent *event)
             motor_dial_ = -100;
         ui->motorDial->setValue(motor_dial_);
     }
+}
 
+void Widget::on_close()
+{
+    this->close();
 }

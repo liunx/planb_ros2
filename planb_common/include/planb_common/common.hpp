@@ -122,6 +122,18 @@ namespace planb {
         snprintf(buf.get(), size, format.c_str(), args...);
         return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
     }
+
+    template <class T>
+    constexpr const T &clamp(const T &v, const T &lo, const T &hi)
+    {
+        return clamp(v, lo, hi, std::less{});
+    }
+
+    template <class T, class Compare>
+    constexpr const T &clamp(const T &v, const T &lo, const T &hi, Compare comp)
+    {
+        return comp(v, lo) ? lo : comp(hi, v) ? hi : v;
+    }
 }
 
 #endif

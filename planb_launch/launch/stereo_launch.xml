@@ -10,4 +10,5 @@
   <node pkg="planb_core" exec="brain" output="screen">
     <param name="bt_xml" value="$(find-pkg-share planb_core)/config/stereo_test.xml"/>
   </node>
+  <node pkg="planb_ui" exec="planb_ui" output="screen"/>
 </launch>

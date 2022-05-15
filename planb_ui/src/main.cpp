@@ -13,11 +13,17 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     Widget w(nullptr);
     MyThread mthread(nullptr, node);
-    mthread.start();
     w.connect(&w,
               SIGNAL(signal_robot(Robot)),
               &mthread,
               SLOT(slot_robot(Robot)));
+
+    mthread.connect(&mthread,
+              SIGNAL(signal_close()),
+              &w,
+              SLOT(on_close()));
+
+    mthread.start();
     w.show();
     app.exec();
 

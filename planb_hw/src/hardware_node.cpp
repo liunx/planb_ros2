@@ -18,15 +18,6 @@ HardwareNode::HardwareNode(const rclcpp::NodeOptions &options)
         "/planb/hardware/cmd",
         1,
         std::bind(&HardwareNode::cmd_callback, this, _1));
-    sub_operate_ = this->create_subscription<planb_interfaces::msg::Operate>(
-        "/planb/hardware/operate",
-        1,
-        std::bind(&HardwareNode::operate_callback, this, _1));
-    sub_twist_ = this->create_subscription<geometry_msgs::msg::Twist>(
-        "/cmd_vel",
-        1,
-        std::bind(&HardwareNode::twist_callback, this, _1));
-
     sub_robot_ = this->create_subscription<planb_interfaces::msg::Robot>(
         "/planb/hardware/robot",
         1,
@@ -97,35 +88,6 @@ void HardwareNode::cmd_callback(const planb_interfaces::msg::Cmd &msg)
     default:
         break;
     }
-}
-
-void HardwareNode::twist_callback(const geometry_msgs::msg::Twist &msg)
-{
-    // angle
-    if (msg.angular.z == 0)
-        angle_ = 90;
-    else
-        angle_ += msg.angular.z;
-
-    if (angle_ < 0)
-        angle_ = 0;
-    else if (angle_ > 180)
-        angle_ = 180;
-
-    // accel
-    if (msg.linear.x == 0)
-        accel_ = 0;
-    else
-        accel_ += msg.linear.x;
-
-    if (accel_ < -100)
-        accel_ = -100;
-    else if (accel_ > 100)
-        accel_ = 100;
-}
-
-void HardwareNode::operate_callback(const planb_interfaces::msg::Operate &msg)
-{
 }
 
 void HardwareNode::normal_mode(const planb_interfaces::msg::Robot &msg)

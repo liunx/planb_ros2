@@ -1,7 +1,11 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define MIN_ACCEL 60
+#define MIN_ACCEL 50
+
+#define NORMAL_MODE 0
+#define CIRCLE_MODE 1
+#define ARCKERMAN_MODE 2
 
 struct Servo {
     int32_t angle;

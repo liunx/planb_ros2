@@ -14,6 +14,7 @@ public:
     MyThread(QObject *parent, std::shared_ptr<rclcpp::Node> node);
 
 signals:
+    void signal_close();
 
 private slots:
     void slot_robot(Robot robot);
